@@ -1,0 +1,905 @@
+﻿@model OfisServisSistemi.ViewModels.KatDurumModel
+@{
+    ViewData["Title"] = "Personel - SUBU OYS";
+
+    var hizmetTurleri = new List<string> { "Temizlik", "Çöp Alımı", "Çöp" };
+    var cayOcagiTalepler = Model.AktifTalepler.Where(t => !hizmetTurleri.Contains(t.IslemTuru)).OrderBy(t => t.OlusturulmaTarihi).ToList();
+    var hizmetTalepler = Model.AktifTalepler.Where(t => hizmetTurleri.Contains(t.IslemTuru)).OrderBy(t => t.OlusturulmaTarihi).ToList();
+
+    var odaSozlugu = Model.Odalar.ToDictionary(
+        o => o.KullaniciAdi,
+        o => !string.IsNullOrEmpty(o.OdaNumarasi) ? o.OdaNumarasi : o.KullaniciAdi
+    );
+
+    string GetUrunIkon(string ad)
+    {
+        if (string.IsNullOrWhiteSpace(ad)) return "https://cdn-icons-png.flaticon.com/512/5164/5164023.png";
+
+        string k = ad.ToLower(new System.Globalization.CultureInfo("tr-TR"))
+                     .Replace("ı", "i").Replace("ü", "u").Replace("ö", "o")
+                     .Replace("ş", "s").Replace("ç", "c").Replace("ğ", "g");
+
+        if (k.Contains("cay") || k.Contains("oralet") || k.Contains("kusburnu") || k.Contains("ihlamur"))
+            return "https://cdn-icons-png.flaticon.com/512/3504/3504837.png";
+
+        if (k.Contains(" su") || k == "su")
+            return "https://cdn-icons-png.flaticon.com/512/824/824239.png";
+
+        if (k.Contains("soda") || k.Contains("maden") || k.Contains("kola") || k.Contains("fanta") || k.Contains("sprite") || k.Contains("ayran") || k.Contains("gazoz") || k.Contains("ice") || k.Contains("limonata"))
+            return "https://cdn-icons-png.flaticon.com/512/659/659385.png";
+
+        if (k.Contains("kahve") || k.Contains("nescafe") || k.Contains("espresso") || k.Contains("latte") || k.Contains("mocha") || k.Contains("macchiato"))
+            return "https://cdn-icons-png.flaticon.com/512/590/590749.png";
+
+        if (k.Contains("biskuvi") || k.Contains("kek") || k.Contains("cikolata") || k.Contains("kurabiye") || k.Contains("gofret") || k.Contains("cips"))
+            return "🍪";
+        if (k.Contains("seker")) return "🍬";
+        if (k.Contains("temiz")) return "🧹";
+        if (k.Contains("cop")) return "🗑️";
+
+        return "https://cdn-icons-png.flaticon.com/512/5164/5164023.png";
+    }
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+        --renk-uyari: #dc3545;
+        --renk-sari: #ffc107;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        color: #333;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        border: 1px solid #e1e5eb;
+        margin: 20px 0;
+        border-left: 6px solid var(--renk-ana-mavi);
+    }
+
+    .kat-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .kat-logo {
+        height: 50px;
+        width: auto;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
+    .kat-detay {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kat-baslik {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+
+    .kat-alt-baslik {
+        font-size: 0.85rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+
+    .header-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-ozel {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+
+        .btn-ozel:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    .btn-cikis {
+        border-color: #f8d7da;
+        color: #dc3545;
+        background: #fff5f5;
+    }
+
+        .btn-cikis:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+    .ana-pano {
+        display: grid;
+        grid-template-columns: 1fr 1fr 350px;
+        gap: 20px;
+        padding-bottom: 30px;
+        align-items: start;
+    }
+
+    @@media (max-width: 1200px) {
+        .ana-pano {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .pano-kolon {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .kolon-baslik {
+        padding: 12px 15px;
+        color: white;
+        font-weight: 800;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-transform: uppercase;
+    }
+
+    .kolon-cay .kolon-baslik {
+        background: var(--renk-ana-mavi);
+    }
+
+    .kolon-hizmet .kolon-baslik {
+        background: var(--renk-teal);
+    }
+
+    .kolon-stok .kolon-baslik {
+        background: #2c3e50;
+    }
+
+    .havuz-alan {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 400px;
+        background: #f8f9fa;
+    }
+
+    .siparis-bilet {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e1e5eb;
+        border-left: 5px solid var(--renk-gri);
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+        .siparis-bilet.kritik {
+            border-left-color: var(--renk-uyari);
+            background: #fffdfd;
+        }
+
+    .kolon-cay .siparis-bilet {
+        border-left-color: var(--renk-ana-mavi);
+    }
+
+    .kolon-hizmet .siparis-bilet {
+        border-left-color: var(--renk-teal);
+    }
+
+    .bilet-detay {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        gap: 4px;
+        overflow: hidden;
+    }
+
+    .bilet-satir1 {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .oda-etiketi {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #2c3e50;
+        min-width: 85px;
+    }
+
+    .urun-adi {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dinamik-ikon {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+    }
+
+    .miktar-badge {
+        background: #e9ecef;
+        color: #495057;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 800;
+        border: 1px solid #dee2e6;
+    }
+
+    .sure-sayaci {
+        background: #eef4ff;
+        color: var(--renk-ana-mavi);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .siparis-bilet.kritik .sure-sayaci {
+        background: #fff5f5;
+        color: var(--renk-uyari);
+    }
+
+    .bilet-satir2 {
+        display: flex;
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    .not-alani {
+        background: #fff8e1;
+        color: #b58900;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid #ffe082;
+        white-space: normal;
+        word-wrap: break-word;
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .bilet-aksiyon {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .btn-teslim {
+        background: var(--renk-yesil);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: 0.2s;
+        box-shadow: 0 2px 5px rgba(27, 172, 80, 0.2);
+    }
+
+        .btn-teslim:hover {
+            background: #169c46;
+        }
+
+    .btn-iptal {
+        background: #fff5f5;
+        color: var(--renk-uyari);
+        border: 1px solid #ffcdd2;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+        .btn-iptal:hover {
+            background: var(--renk-uyari);
+            color: white;
+        }
+
+    .badge-bekliyor {
+        background: var(--renk-sari);
+        color: #333;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .bos-durum {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #adb5bd;
+        text-align: center;
+        font-weight: 600;
+        gap: 10px;
+        opacity: 0.7;
+        padding: 40px 0;
+    }
+
+    .btn-yeni-ekle {
+        background: white;
+        color: #2c3e50;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 800;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .btn-yeni-ekle:hover {
+            background: #eef4ff;
+            transform: scale(1.05);
+        }
+
+    .stok-satir {
+        background: white;
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .stok-isim {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .stok-ikon {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+    }
+
+    .stok-kontroller {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .stok-arttir-azalt {
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        overflow: hidden;
+    }
+
+    .stok-btn {
+        background: none;
+        border: none;
+        width: 28px;
+        height: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .stok-btn:hover {
+            background: #e9ecef;
+        }
+
+    .stok-deger {
+        width: 35px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 0.9rem;
+        color: var(--renk-ana-mavi);
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+    }
+
+    .sinirsiz-badge {
+        background: #eef4ff;
+        color: var(--renk-ana-mavi);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        border: 1px solid #dbeafe;
+    }
+
+    .btn-stok-sil {
+        background: #fff5f5;
+        border: 1px solid #ffcdd2;
+        color: #dc3545;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+    }
+
+        .btn-stok-sil:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+    .modal-kutu {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        animation: popUp 0.3s ease-out;
+    }
+
+    @@keyframes popUp {
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .modal-baslik {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #333;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .modal-baslik.uyari {
+            color: var(--renk-uyari);
+        }
+
+    .modal-aciklama {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .modal-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+    }
+
+    .modal-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        resize: none;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+    }
+
+    .modal-butonlar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-vazgec {
+        background: #f8f9fa;
+        color: #333;
+        border: 1px solid #ccc;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-kaydet {
+        background: var(--renk-ana-mavi);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+        .btn-kaydet.kirmizi {
+            background: var(--renk-uyari);
+        }
+
+    #toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .toast-box {
+        background: white;
+        border-left: 6px solid var(--renk-yesil);
+        width: 300px;
+        padding: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideInLeft 0.5s ease-out forwards;
+        border: 1px solid #e1e5eb;
+    }
+
+    @@keyframes slideInLeft {
+        from {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="container-fluid" style="max-width: 1600px;">
+
+    <div class="header-bar">
+        <div class="kat-info">
+            <img src="/img/logo.png" class="kat-logo" alt="Logo" />
+            <div class="kat-detay">
+                <div class="kat-baslik">@(ViewBag.KatAdi ?? "Yönetim Paneli")</div>
+                <div class="kat-alt-baslik">Görevli Mutfak & Hizmet Ekranı</div>
+            </div>
+        </div>
+        <div class="header-buttons">
+            <a href="/Home/Gecmis" class="btn-ozel">📋 Geçmiş Siparişler</a>
+            <a href="/Account/Logout" class="btn-ozel btn-cikis">⏻ Çıkış</a>
+        </div>
+    </div>
+
+    <audio id="sesDosyasi" src="/sounds/bildirim.mp3" preload="auto"></audio>
+    <div id="toast-container"></div>
+
+    <div class="ana-pano">
+
+        <!-- 1. KOLON: ÇAY OCAĞI -->
+        <div class="pano-kolon kolon-cay">
+            <div class="kolon-baslik"><span>ÇAY OCAĞI SİPARİŞLERİ</span></div>
+            <div class="havuz-alan">
+                @if (!cayOcagiTalepler.Any())
+                {
+                    <div class="bos-durum"></div>
+                }
+                else
+                {
+                    foreach (var talep in cayOcagiTalepler)
+                    {
+                        string gercekOdaAdi = odaSozlugu.ContainsKey(talep.OdaAdi) ? odaSozlugu[talep.OdaAdi] : talep.OdaAdi;
+                        string ikon = GetUrunIkon(talep.IslemTuru);
+
+                        <div class="siparis-bilet" id="satir-@talep.Id">
+                            <div class="bilet-detay">
+                                <div class="bilet-satir1">
+                                    <span class="oda-etiketi">ODA @gercekOdaAdi</span>
+                                    <div class="urun-adi">
+                                        @if (ikon.StartsWith("http"))
+                                        {
+                                            <img src="@ikon" class="dinamik-ikon" />
+                                        }
+                                        else
+                                        {
+                                            <span>@ikon</span>
+                                        }
+                                        @talep.IslemTuru
+                                    </div>
+                                    <span class="miktar-badge">x@(talep.Miktar)</span>
+                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
+                                {
+                                    <div class="bilet-satir2"><span class="not-alani">📝 Not: @talep.Aciklama</span></div>
+                                }
+                            </div>
+                            <div class="bilet-aksiyon">
+                                @if (talep.Durum == "Bekliyor")
+                                {
+                                    <button class="btn-iptal" onclick="iptalModalAc(@talep.Id)">✖ İptal</button>
+                                    <button class="btn-teslim" onclick="teslimEt(@talep.Id)">✓ Teslim Et</button>
+                                }
+                                else
+                                {
+                                    <span class="badge-bekliyor">Onay Bekleniyor</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- 2. KOLON: HİZMET TALEPLERİ -->
+        <div class="pano-kolon kolon-hizmet">
+            <div class="kolon-baslik"><span>HİZMET TALEPLERİ</span></div>
+            <div class="havuz-alan">
+                @if (!hizmetTalepler.Any())
+                {
+                    <div class="bos-durum"></div>
+                }
+                else
+                {
+                    foreach (var talep in hizmetTalepler)
+                    {
+                        string gercekOdaAdi = odaSozlugu.ContainsKey(talep.OdaAdi) ? odaSozlugu[talep.OdaAdi] : talep.OdaAdi;
+                        string ikon = talep.IslemTuru == "Temizlik" ? "🧹" : "🗑️";
+
+                        <div class="siparis-bilet" id="satir-@talep.Id">
+                            <div class="bilet-detay">
+                                <div class="bilet-satir1">
+                                    <span class="oda-etiketi">ODA @gercekOdaAdi</span>
+                                    <div class="urun-adi"><span>@ikon</span> @talep.IslemTuru</div>
+                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
+                                {
+                                    <div class="bilet-satir2"><span class="not-alani">📝 Not: @talep.Aciklama</span></div>
+                                }
+                            </div>
+                            <div class="bilet-aksiyon">
+                                @if (talep.Durum == "Bekliyor")
+                                {
+                                    <button class="btn-iptal" onclick="iptalModalAc(@talep.Id)">✖ İptal</button>
+                                    <button class="btn-teslim" onclick="teslimEt(@talep.Id)">✓ Tamamla</button>
+                                }
+                                else
+                                {
+                                    <span class="badge-bekliyor">Onay Bekleniyor</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- 3. KOLON: STOK VE MENÜ YÖNETİMİ (AKORDEON ÖZELLİĞİ EKLENDİ) -->
+        <div class="pano-kolon kolon-stok">
+            <div class="kolon-baslik" style="cursor: pointer;" onclick="toggleStok()">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <span id="stokOkIcon">▶</span> STOK
+                </span>
+                <button class="btn-yeni-ekle" onclick="urunEkleModalAc(event)">➕ Ekle</button>
+            </div>
+
+            <div class="havuz-alan" id="stokIcerikKutusu" style="gap: 12px; display: none; min-height: auto;">
+                @if (!Model.Urunler.Any())
+                {
+                    <div class="bos-durum" style="padding: 20px; color: #adb5bd; font-weight: 600; text-align: center;">Henüz ürün eklenmemiş.</div>
+                }
+                else
+                {
+                    foreach (var urun in Model.Urunler)
+                    {
+                        string sIkon = GetUrunIkon(urun.Ad);
+                        <div class="stok-satir">
+                            <div class="stok-isim">
+                                @if (sIkon.StartsWith("http"))
+                                {
+                                    <img src="@sIkon" class="stok-ikon" />
+                                }
+                                else
+                                {
+                                    <span>@sIkon</span>
+                                }
+                                @urun.Ad
+                            </div>
+                            <div class="stok-kontroller">
+                                @if (urun.Miktar.HasValue)
+                                {
+                                    <div class="stok-arttir-azalt">
+                                        <button class="stok-btn" onclick="stokGuncelle(@urun.Id, -1)">-</button>
+                                        <div class="stok-deger">@urun.Miktar</div>
+                                        <button class="stok-btn" onclick="stokGuncelle(@urun.Id, 1)">+</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="sinirsiz-badge">Sınırsız</span>
+                                }
+                                <button class="btn-stok-sil" onclick="urunSil(@urun.Id)" title="Sil">✖</button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal-overlay" id="urunEkleModal">
+    <div class="modal-kutu">
+        <div class="modal-baslik">📦 Yeni Ürün Ekle</div>
+        <p class="modal-aciklama">Çay ocağı menüsüne yeni bir ürün ekleyin. Adet/sayı belirtmek istemiyorsanız miktarı boş bırakın (Sınırsız olarak eklenir).</p>
+        <form method="post" action="/Home/UrunEkle">
+            <input type="text" name="ad" class="modal-input" placeholder="Ürün Adı (Örn: Türk Kahvesi, Kola)" required />
+            <input type="number" name="miktar" class="modal-input" placeholder="Miktar / Stok (İsteğe Bağlı)" min="1" />
+            <div class="modal-butonlar">
+                <button type="button" class="btn-vazgec" onclick="urunEkleModalKapat()">İptal</button>
+                <button type="submit" class="btn-kaydet">Ürünü Ekle</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="iptalModal">
+    <div class="modal-kutu">
+        <div class="modal-baslik uyari">⚠️ Siparişi İptal Et</div>
+        <p class="modal-aciklama">Bu siparişi reddetmek üzeresiniz. Dilerseniz siparişi veren kişiye iptal nedenini bildiren bir not bırakabilirsiniz.</p>
+        <input type="hidden" id="iptalEdilecekTalepId" />
+        <textarea id="iptalNotuInput" class="modal-textarea" rows="3" placeholder="Örn: Kusura bakmayın, çayımız tükenmiştir..."></textarea>
+        <div class="modal-butonlar">
+            <button class="btn-vazgec" onclick="iptalModalKapat()">Vazgeç</button>
+            <button class="btn-kaydet kirmizi" onclick="siparisReddet()">İptal Et</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder().withUrl("/ofisHub").withAutomaticReconnect().build();
+    connection.start().catch(err => console.error(err));
+    connection.on("SayfaGuncelle", function () { location.reload(); });
+
+    connection.on("TalepAlindi", function (odaAdi, tur, aciklama) {
+        var audio = document.getElementById("sesDosyasi");
+        audio.play().catch(e => console.log(e));
+        showToast(odaAdi, tur, aciklama);
+        setTimeout(() => location.reload(), 1500);
+    });
+
+    function showToast(odaAdi, tur, aciklama) {
+        var container = document.getElementById("toast-container");
+        var html = `<div class="toast-box"><div>🔔</div><div><h5 style="margin:0;color:#003fa1;font-weight:bold;font-size:1.1rem;">ODA ${odaAdi}</h5><p style="margin:3px 0 0 0;font-weight:600;font-size:0.9rem;">${tur} İstedi</p></div></div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function teslimEt(id) { fetch('/Home/AdminTeslimEtti?id=' + id, { method: 'POST' }).then(res => { if(res.ok) document.getElementById('satir-' + id).style.display = 'none'; }); }
+    function stokGuncelle(id, degisim) { fetch(`/Home/UrunMiktarGuncelle?id=${id}&degisim=${degisim}`, { method: 'POST' }).then(res => { if(res.ok) location.reload(); }); }
+    function urunSil(id) { if(!confirm("Bu ürünü menüden kaldırmak istediğinize emin misiniz?")) return; fetch(`/Home/UrunSil?id=${id}`, { method: 'POST' }).then(res => { if(res.ok) location.reload(); }); }
+
+    // AKORDEON (SEKME) AÇ/KAPA İŞLEVİ
+    function toggleStok() {
+        var kutu = document.getElementById("stokIcerikKutusu");
+        var ok = document.getElementById("stokOkIcon");
+        if (kutu.style.display === "none" || kutu.style.display === "") {
+            kutu.style.display = "flex";
+            ok.innerText = "▼";
+        } else {
+            kutu.style.display = "none";
+            ok.innerText = "▶";
+        }
+    }
+
+    function urunEkleModalAc(event) {
+        if(event) event.stopPropagation(); // Butona tıklanınca sekmenin açılıp kapanmasını engeller
+        document.getElementById('urunEkleModal').style.display = 'flex';
+    }
+
+    function urunEkleModalKapat() { document.getElementById('urunEkleModal').style.display = 'none'; }
+
+    function iptalModalAc(id) { document.getElementById('iptalEdilecekTalepId').value = id; document.getElementById('iptalNotuInput').value = ""; document.getElementById('iptalModal').style.display = 'flex'; }
+    function iptalModalKapat() { document.getElementById('iptalModal').style.display = 'none'; }
+
+    function siparisReddet() {
+        var id = document.getElementById('iptalEdilecekTalepId').value;
+        var not = document.getElementById('iptalNotuInput').value;
+        fetch(`/Home/AdminReddetti?id=${id}&iptalNotu=${encodeURIComponent(not)}`, { method: 'POST' })
+            .then(res => { if(res.ok) { iptalModalKapat(); document.getElementById('satir-' + id).style.display = 'none'; } });
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('iptalModal')) iptalModalKapat();
+        if (event.target == document.getElementById('urunEkleModal')) urunEkleModalKapat();
+    }
+
+    function sureGuncelle() {
+        document.querySelectorAll('.sure-sayaci').forEach(function(el) {
+            var tarihStr = el.getAttribute('data-tarih');
+            var satirId = el.getAttribute('data-satir-id');
+            var satir = document.getElementById(satirId);
+            var farkDk = Math.floor((new Date() - new Date(tarihStr)) / 60000);
+
+            if (farkDk < 1) { el.innerText = "Yeni"; }
+            else if (farkDk < 10) { el.innerText = farkDk + " dk"; if(satir) satir.classList.remove('kritik'); }
+            else { el.innerText = "⚠️ " + farkDk + " dk!"; if(satir) satir.classList.add('kritik'); }
+        });
+    }
+    setInterval(sureGuncelle, 10000);
+    document.addEventListener("DOMContentLoaded", sureGuncelle);
+</script>

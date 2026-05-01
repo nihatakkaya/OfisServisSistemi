@@ -1,0 +1,411 @@
+﻿@model OfisServisSistemi.ViewModels.KatDurumModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canlı İzleme - @(ViewBag.KatAdi ?? "Kat Paneli")</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+
+    <style>
+        :root {
+            --renk-ana-mavi: #003fa1;
+            --renk-teal: #00887a;
+            --renk-yesil: #1bac50;
+            --renk-gri: #6b6e75;
+            --renk-beyaz: #ffffff;
+            --renk-zemin: #f4f6f9;
+        }
+
+        body {
+            background-color: var(--renk-zemin);
+            color: #333;
+            font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .ana-konteyner {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header-bar {
+            background: var(--renk-beyaz);
+            border-radius: 16px;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border: 1px solid #e1e5eb;
+            margin-bottom: 40px;
+            border-left: 8px solid var(--renk-ana-mavi);
+        }
+
+        .header-sol {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .header-logo {
+            height: 70px;
+            width: auto;
+            display: block;
+        }
+
+        .header-detay {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-baslik {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--renk-ana-mavi);
+            line-height: 1;
+            letter-spacing: -1px;
+            margin: 0;
+        }
+
+        .header-alt {
+            font-size: 0.95rem;
+            color: var(--renk-gri);
+            font-weight: 600;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-geri {
+            background: #f8f9fa;
+            border: 1px solid #dfe1e5;
+            color: var(--renk-gri);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+            .btn-geri:hover {
+                background: var(--renk-ana-mavi);
+                color: white;
+                border-color: var(--renk-ana-mavi);
+            }
+
+        .oda-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            padding-bottom: 50px;
+        }
+
+        .oda-kutusu {
+            border-radius: 12px;
+            height: 380px;
+            background-color: var(--renk-beyaz);
+            position: relative;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border: 1px solid #e1e5eb;
+            overflow: hidden;
+        }
+
+            .oda-kutusu:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+            }
+
+        .oda-header {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dolu-oda .oda-header {
+            background-color: #eef4ff;
+            border-bottom-color: #dbeafe;
+        }
+
+        .oda-no {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--renk-gri);
+        }
+
+        .dolu-oda .oda-no {
+            color: var(--renk-ana-mavi);
+        }
+
+        .durum-text {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #adb5bd;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bos-icerik {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0.4;
+        }
+
+        .bos-ikon {
+            font-size: 3.5rem;
+            filter: grayscale(100%);
+            margin-bottom: 10px;
+        }
+
+        .bos-yazi {
+            font-weight: 600;
+            color: #999;
+        }
+
+        .siparis-listesi {
+            list-style: none;
+            padding: 15px;
+            margin: 0;
+            width: 100%;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+            .siparis-listesi::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .siparis-listesi::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 4px;
+            }
+
+        .siparis-satir {
+            background: var(--renk-beyaz);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            flex-shrink: 0;
+        }
+
+        .siparis-sol {
+            display: flex;
+            flex-direction: column;
+            width: 75%;
+        }
+
+        .siparis-baslik {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .siparis-not {
+            font-size: 0.8rem;
+            color: #dc3545;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 3px;
+        }
+
+        .sure-sayaci {
+            font-size: 0.75rem;
+            color: #999;
+            font-weight: 600;
+            margin-top: 3px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .btn-mini-teslim {
+            border: none;
+            background: var(--renk-yesil);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 3px 8px rgba(27, 172, 80, 0.3);
+        }
+
+            .btn-mini-teslim:hover {
+                background: #169c46;
+                transform: scale(1.1);
+            }
+
+        .badge-onay {
+            background: #fff3cd;
+            color: #856404;
+            font-size: 0.7rem;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #ffeeba;
+        }
+
+        .kritik-satir {
+            border-left: 4px solid #dc3545;
+            background-color: #fff5f5;
+        }
+
+            .kritik-satir .sure-sayaci {
+                color: #dc3545;
+                font-weight: bold;
+            }
+    </style>
+</head>
+<body>
+    <div class="ana-konteyner">
+        <div class="header-bar">
+            <div class="header-sol">
+                <img src="/img/logo.png" class="header-logo" alt="Logo" />
+                <div class="header-detay">
+                    <div class="header-baslik">Canlı İzleme: @(ViewBag.KatAdi ?? "Bilinmeyen Kat")</div>
+                    <div class="header-alt">Anlık Kat ve Sipariş Durumu</div>
+                </div>
+            </div>
+            <a href="/Admin/Index" class="btn-geri">← Yönetim Paneline Dön</a>
+        </div>
+
+        <div class="oda-grid">
+            @if (Model != null && Model.Odalar != null && Model.Odalar.Count > 0)
+            {
+                @foreach (var oda in Model.Odalar)
+                {
+                    var talepler = Model.AktifTalepler != null ? Model.AktifTalepler.Where(t => t.OdaAdi == oda.KullaniciAdi).ToList() : new List<OfisServisSistemi.Models.Talep>();
+
+                    // DÜZELTME: İzleme ekranında da oda numarasını gösteriyoruz
+                    var temizAd = !string.IsNullOrEmpty(oda.OdaNumarasi) ? oda.OdaNumarasi : oda.KullaniciAdi;
+
+                    var kutuClass = talepler.Count > 0 ? "dolu-oda" : "";
+
+                    <div class="oda-kutusu @kutuClass">
+                        <div class="oda-header">
+                            <span class="oda-no">@temizAd</span>
+                            @if (talepler.Count == 0)
+                            {
+                                <span class="durum-text">Boş</span>
+                            }
+                            else
+                            {
+
+                                <span class="durum-text" style="color:var(--renk-teal)">Aktif</span>
+                            }
+                        </div>
+
+                        @if (talepler.Count == 0)
+                        {
+                            <div class="bos-icerik"><div class="bos-ikon"></div><span class="bos-yazi">Sipariş Yok</span></div>
+                        }
+                        else
+                        {
+                            <ul class="siparis-listesi">
+                                @foreach (var talep in talepler)
+                                {
+                                    var ikon = "🔔";
+                                    if (talep.IslemTuru == "Kahve") ikon = "☕";
+                                    else if (talep.IslemTuru == "Çay") ikon = "🍵";
+                                    else if (talep.IslemTuru == "Temizlik") ikon = "🧹";
+                                    else if (talep.IslemTuru == "Çöp Alımı") ikon = "🗑️";
+
+                                    <li class="siparis-satir" id="satir-@talep.Id">
+                                        <div class="siparis-sol">
+                                            <div class="siparis-baslik">@ikon @talep.IslemTuru</div>
+                                            @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
+                                            {
+                                                <span class="siparis-not" title="@talep.Aciklama">@talep.Aciklama</span>
+                                            }
+                                            <small class="sure-sayaci" data-satir-id="satir-@talep.Id" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</small>
+                                        </div>
+                                        @if (talep.Durum == "Bekliyor")
+                                        {
+                                            <button class="btn-mini-teslim" onclick="teslimEt(@talep.Id)" title="Müdahale Et (Tamamla)">✓</button>
+                                        }
+                                        else
+                                        {
+
+                                            <div class="badge-onay">Onay Bekliyor</div>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center w-100 p-5">
+                    <h3 class="text-muted">Bu katta henüz oda veya kullanıcı tanımlanmamış.</h3>
+                    <a href="/Admin/Index" class="btn btn-primary mt-3">Yönetim Paneline Dön</a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder().withUrl("/ofisHub").withAutomaticReconnect().build();
+        connection.start().catch(err => console.error(err));
+        connection.on("SayfaGuncelle", function () { location.reload(); });
+        connection.on("TalepAlindi", function () { location.reload(); });
+
+        function teslimEt(id) {
+            if(confirm("Admin yetkisiyle bu siparişi tamamlamak istiyor musunuz?")) {
+                fetch('/Home/AdminTeslimEtti?id=' + id, { method: 'POST' });
+            }
+        }
+
+        function sureGuncelle() {
+            document.querySelectorAll('.sure-sayaci').forEach(function(el) {
+                var tarihStr = el.getAttribute('data-tarih');
+                var satirId = el.getAttribute('data-satir-id');
+                var satir = document.getElementById(satirId);
+                var farkDk = Math.floor((new Date() - new Date(tarihStr)) / 60000);
+                if (farkDk < 1) { el.innerText = "Yeni"; el.style.color = "var(--renk-yesil)"; }
+                else if (farkDk < 10) { el.innerText = farkDk + " dk"; el.style.color = "#888"; }
+                else { el.innerText = "⚠️ " + farkDk + " dk!"; if(satir) satir.classList.add('kritik-satir'); }
+            });
+        }
+        setInterval(sureGuncelle, 10000);
+        document.addEventListener("DOMContentLoaded", sureGuncelle);
+    </script>
+</body>
+</html>

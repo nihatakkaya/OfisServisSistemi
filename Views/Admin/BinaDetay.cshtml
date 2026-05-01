@@ -1,0 +1,262 @@
+﻿@model OfisServisSistemi.Models.Bina
+@{
+    ViewData["Title"] = Model.Ad + " - Katlar";
+}
+
+<style>
+    /* --- KURUMSAL RENK PALETİ --- */
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+    }
+
+    .ana-konteyner {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 16px;
+        padding: 25px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 8px solid var(--renk-ana-mavi);
+    }
+
+    .baslik-buyuk {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        margin: 0;
+    }
+
+    .baslik-alt {
+        color: var(--renk-gri);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    /* KAT EKLEME */
+    .ekleme-karti {
+        background: var(--renk-beyaz);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 25px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .input-ozel {
+        flex-grow: 1;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #dfe1e5;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .input-ozel:focus {
+            border-color: var(--renk-teal);
+            box-shadow: 0 0 0 3px rgba(0, 136, 122, 0.1);
+        }
+
+    .btn-ekle {
+        background-color: var(--renk-teal);
+        color: white;
+        border: none;
+        padding: 0 25px;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+        .btn-ekle:hover {
+            background-color: #006d62;
+        }
+
+    /* LİSTE */
+    .kat-listesi {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .kat-item {
+        background: var(--renk-beyaz);
+        padding: 20px 25px;
+        border-radius: 10px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 5px solid var(--renk-ana-mavi);
+        transition: transform 0.2s;
+    }
+
+        .kat-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+    .kat-isim {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .kat-bilgi {
+        font-size: 0.9rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+    }
+
+    .btn-izle {
+        background-color: var(--renk-yesil);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        margin-right: 5px;
+    }
+
+    .btn-yonet {
+        background-color: var(--renk-ana-mavi);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        margin-right: 5px;
+    }
+
+    .btn-duzenle {
+        background-color: #ffc107;
+        color: #333;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-right: 5px;
+    }
+
+    .btn-sil {
+        background-color: transparent;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+        .btn-sil:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div>
+            <h1 class="baslik-buyuk">@Model.Ad</h1>
+            <div class="baslik-alt">Kat Yönetimi</div>
+        </div>
+        <a href="/Admin/Index" class="btn-geri">← Binalara Dön</a>
+    </div>
+
+    <form action="/Admin/KatEkle" method="post" class="ekleme-karti">
+        <input type="hidden" name="binaId" value="@Model.Id" />
+        <input type="text" name="ad" class="input-ozel" placeholder="Yeni Kat Adı (Örn: 3. Kat)" required />
+        <button type="submit" class="btn-ekle">+ KAT EKLE</button>
+    </form>
+
+    <div class="kat-listesi">
+        @foreach (var kat in Model.Katlar)
+        {
+            <div class="kat-item">
+                <div class="d-flex align-items-center gap-3">
+                    <span style="font-size: 1.5rem; color: var(--renk-ana-mavi);">📂</span>
+                    <div>
+                        <div class="kat-isim">@kat.Ad</div>
+                        <div class="kat-bilgi">@kat.Kullanicilar.Count Kullanıcı Tanımlı</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <a href="/Admin/KatIzle/@kat.Id" class="btn-izle">Canlı İzle</a>
+                    <a href="/Admin/KatDetay/@kat.Id" class="btn-yonet">Kullanıcıları Yönet →</a>
+
+                    <button class="btn-duzenle" data-bs-toggle="modal" data-bs-target="#duzenleKatModal" onclick="katDuzenle(@kat.Id, '@kat.Ad')">Düzenle</button>
+
+                    <form action="/Admin/KatSil" method="post" onsubmit="return confirm('Katı silmek istiyor musunuz?');" style="margin:0;">
+                        <input type="hidden" name="id" value="@kat.Id" />
+                        <button type="submit" class="btn-sil">Sil</button>
+                    </form>
+                </div>
+            </div>
+        }
+        @if (Model.Katlar.Count == 0)
+        {
+            <div class="text-center p-5 text-muted">Bu binada henüz kat yok.</div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="duzenleKatModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Katı Düzenle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form action="/Admin/KatGuncelle" method="post">
+                <div class="modal-body"><input type="hidden" name="id" id="modalKatId" /><label class="form-label">Kat Adı</label><input type="text" name="ad" id="modalKatAd" class="form-control" required /></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary">Kaydet</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    function katDuzenle(id, ad) {
+        document.getElementById('modalKatId').value = id;
+        document.getElementById('modalKatAd').value = ad;
+    }
+</script>

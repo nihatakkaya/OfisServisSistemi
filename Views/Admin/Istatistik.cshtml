@@ -1,0 +1,422 @@
+﻿@{
+    ViewData["Title"] = "Veri Analitiği - SUBU OYS";
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+        --renk-acikmavi: #eef4ff;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+    }
+
+    .ana-konteyner {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 30px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 40px;
+        border-left: 6px solid var(--renk-ana-mavi);
+    }
+
+    .header-sol {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .header-logo {
+        height: 60px;
+        width: auto;
+    }
+
+    .header-baslik {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        line-height: 1;
+        margin: 0;
+    }
+
+    .header-alt {
+        font-size: 0.9rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: 0.2s;
+        font-size: 0.95rem;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    .grafik-alani {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    @@media (max-width: 992px) {
+        .grafik-alani {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .grafik-karti {
+        background: var(--renk-beyaz);
+        padding: 30px;
+        border-radius: 10px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    .grafik-baslik {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #495057;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #f0f2f5;
+        padding-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .hiyerarsi-kapsayici {
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .akordiyon-btn {
+        width: 100%;
+        background: #f8f9fa;
+        border: none;
+        padding: 15px 20px;
+        text-align: left;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #333;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e1e5eb;
+        transition: 0.2s;
+    }
+
+        .akordiyon-btn:hover {
+            background: #eef4ff;
+            color: var(--renk-ana-mavi);
+        }
+
+        .akordiyon-btn::after {
+            content: '\25BC';
+            font-size: 0.8rem;
+            transition: transform 0.3s;
+        }
+
+        .akordiyon-btn.aktif::after {
+            transform: rotate(-180deg);
+        }
+
+        .akordiyon-btn.aktif {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-bottom-color: var(--renk-ana-mavi);
+        }
+
+            .akordiyon-btn.aktif:hover {
+                background: #002d75;
+            }
+
+    .akordiyon-icerik {
+        padding: 0;
+        display: none;
+        background: white;
+    }
+
+        .akordiyon-icerik.goster {
+            display: block;
+        }
+
+    .kat-btn {
+        width: 100%;
+        background: white;
+        border: none;
+        padding: 12px 30px;
+        text-align: left;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #444;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px dashed #e1e5eb;
+        transition: 0.2s;
+    }
+
+        .kat-btn:hover {
+            background: #f0fbf9;
+            color: var(--renk-teal);
+        }
+
+        .kat-btn::after {
+            content: '\25BC';
+            font-size: 0.7rem;
+            transition: transform 0.3s;
+        }
+
+        .kat-btn.aktif::after {
+            transform: rotate(-180deg);
+        }
+
+        .kat-btn.aktif {
+            background: var(--renk-teal);
+            color: white;
+            border-bottom-color: var(--renk-teal);
+        }
+
+            .kat-btn.aktif:hover {
+                background: #006d62;
+            }
+
+    .oda-listesi {
+        padding: 15px 30px 15px 50px;
+        display: none;
+        background: #fafafa;
+        border-bottom: 1px solid #e1e5eb;
+    }
+
+        .oda-listesi.goster {
+            display: block;
+        }
+
+    .oda-karti {
+        background: white;
+        border-left: 4px solid var(--renk-gri);
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+
+    .oda-baslik {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .oda-sahibi {
+        font-size: 0.85rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+    }
+
+    .urun-etiket-kutusu {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .urun-etiket {
+        background: #e9ecef;
+        color: #495057;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        border: 1px solid #dee2e6;
+    }
+
+        .urun-etiket span {
+            color: var(--renk-ana-mavi);
+            font-weight: 900;
+            margin-left: 5px;
+        }
+
+    .rozet-sayi {
+        background: #e9ecef;
+        color: #495057;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 800;
+    }
+
+    .akordiyon-btn.aktif .rozet-sayi, .kat-btn.aktif .rozet-sayi {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div class="header-sol">
+            <img src="/img/logo.png" class="header-logo" alt="Logo" />
+            <div>
+                <h1 class="header-baslik">Sistem Analitiği</h1>
+                <div class="header-alt">Kurumsal Tüketim Raporları</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="/Admin/ExcelAktar" class="btn-geri" style="color:#1bac50; border-color:#1bac50; background:#e6f4ea;">
+                <img src="https://cdn-icons-png.flaticon.com/512/15465/15465638.png" style="width:20px; height:20px; margin-right:8px; object-fit:contain;" alt="Excel" /> Excel Raporu İndir
+            </a>
+            <a href="/Admin/Index" class="btn-geri">Geri Dön</a>
+        </div>
+    </div>
+
+    <div class="grafik-alani">
+        <div class="grafik-karti">
+            <h5 class="grafik-baslik">Hizmet / Ürün Dağılımı</h5>
+            <canvas id="pastaGrafik"></canvas>
+        </div>
+
+        <div class="grafik-karti" style="grid-column: span 1;">
+            <h5 class="grafik-baslik">En Aktif Odalar</h5>
+            <canvas id="sutunGrafik"></canvas>
+        </div>
+    </div>
+
+    <div class="grafik-karti" style="margin-bottom: 50px;">
+        <h5 class="grafik-baslik">Detaylı Tüketim Raporu</h5>
+
+        <div class="hiyerarsi-kapsayici" id="raporAlani">
+            <!-- JavaScript ile doldurulacak -->
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const islemTurleri = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.IslemTurleri));
+    const islemSayilari = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.IslemSayilari));
+    const topOdaAdlari = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.TopOdaAdlari));
+    const topOdaSiparisleri = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.TopOdaSiparisleri));
+    const arkaPlanRenkleri = ['#003fa1', '#00887a', '#1bac50', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997'];
+
+    if(islemTurleri && islemTurleri.length > 0) {
+        new Chart(document.getElementById('pastaGrafik'), {
+            type: 'doughnut',
+            data: { labels: islemTurleri, datasets: [{ data: islemSayilari, backgroundColor: arkaPlanRenkleri, borderWidth: 0 }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    if(topOdaAdlari && topOdaAdlari.length > 0) {
+        new Chart(document.getElementById('sutunGrafik'), {
+            type: 'bar',
+            data: { labels: topOdaAdlari, datasets: [{ label: 'Tüketilen Ürün Adedi', data: topOdaSiparisleri, backgroundColor: '#00887a', borderRadius: 4 }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+        });
+    }
+
+    const hiyerarsiVerisi = @Html.Raw(ViewBag.HiyerarsikVeri ?? "[]");
+
+    function raporCiz() {
+        const alan = document.getElementById("raporAlani");
+
+        if (!hiyerarsiVerisi || hiyerarsiVerisi.length === 0) {
+            alan.innerHTML = "<div style='padding:20px; text-align:center; color:#888;'>Henüz yeterli tüketim verisi bulunmuyor.</div>";
+            return;
+        }
+
+        let html = "";
+
+        hiyerarsiVerisi.forEach((bina, bIndex) => {
+            html += `<button class="akordiyon-btn" onclick="toggleAc('bina-${bIndex}', this)">
+                        <span>🏢 ${bina.BinaAdi}</span>
+                        <span class="rozet-sayi">${bina.Toplam} İşlem</span>
+                     </button>`;
+
+            html += `<div class="akordiyon-icerik" id="bina-${bIndex}">`;
+
+            bina.Katlar.forEach((kat, kIndex) => {
+                html += `<button class="kat-btn" onclick="toggleAc('kat-${bIndex}-${kIndex}', this)">
+                            <span>📍 ${kat.KatAdi}</span>
+                            <span class="rozet-sayi">${kat.Toplam} İşlem</span>
+                         </button>`;
+
+                html += `<div class="oda-listesi" id="kat-${bIndex}-${kIndex}">`;
+
+                kat.Odalar.forEach(oda => {
+                    html += `<div class="oda-karti">
+                                <div class="oda-baslik">
+                                    ODA ${oda.OdaNo} <span class="oda-sahibi">(${oda.Kullanici})</span>
+                                </div>
+                                <div class="urun-etiket-kutusu">`;
+
+                    oda.Urunler.forEach(urun => {
+                        html += `<div class="urun-etiket">${urun.Ad} <span>x${urun.Adet}</span></div>`;
+                    });
+
+                    html += `   </div>
+                             </div>`;
+                });
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+        });
+
+        alan.innerHTML = html;
+    }
+
+    function toggleAc(hedefId, btnElement) {
+        const hedef = document.getElementById(hedefId);
+        if(hedef.classList.contains("goster")) {
+            hedef.classList.remove("goster");
+            btnElement.classList.remove("aktif");
+        } else {
+            hedef.classList.add("goster");
+            btnElement.classList.add("aktif");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", raporCiz);
+
+</script>

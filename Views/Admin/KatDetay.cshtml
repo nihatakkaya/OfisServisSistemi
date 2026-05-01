@@ -1,0 +1,336 @@
+﻿@model OfisServisSistemi.Models.Kat
+@{
+    ViewData["Title"] = Model.Ad + " - Kullanıcılar";
+}
+
+<style>
+    /* --- KURUMSAL RENK PALETİ --- */
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+    }
+
+    .ana-konteyner {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 16px;
+        padding: 25px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 8px solid var(--renk-ana-mavi);
+    }
+
+    .baslik-buyuk {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        margin: 0;
+    }
+
+    .baslik-alt {
+        color: var(--renk-gri);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    /* EKLEME FORMU */
+    .ekleme-karti {
+        background: var(--renk-beyaz);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+    }
+
+    .form-baslik {
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #f0f2f5;
+        padding-bottom: 10px;
+    }
+
+    .input-ozel {
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #dfe1e5;
+        width: 100%;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .input-ozel:focus {
+            border-color: var(--renk-teal);
+            box-shadow: 0 0 0 3px rgba(0, 136, 122, 0.1);
+        }
+
+    .btn-kaydet {
+        background-color: var(--renk-teal);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        width: 100%;
+        cursor: pointer;
+    }
+
+        .btn-kaydet:hover {
+            background-color: #006d62;
+        }
+
+    /* TABLO */
+    .table-container {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        overflow: hidden;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .custom-table th {
+            background-color: #f8f9fa;
+            padding: 15px 25px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--renk-ana-mavi);
+            border-bottom: 2px solid #eef0f2;
+        }
+
+        .custom-table td {
+            padding: 15px 25px;
+            border-bottom: 1px solid #f1f3f5;
+            color: #333;
+            vertical-align: middle;
+        }
+
+    .badge-rol {
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .rol-oda {
+        background: #eef4ff;
+        color: var(--renk-ana-mavi);
+    }
+
+    .rol-gorevli {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-oda {
+        background: #e9ecef;
+        color: #495057;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        border: 1px solid #dee2e6;
+    }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div>
+            <h1 class="baslik-buyuk">@Model.Ad</h1>
+            <div class="baslik-alt">@Model.Bina.Ad / Kullanıcı Yönetimi</div>
+        </div>
+        <a href="/Admin/BinaDetay/@Model.BinaId" class="btn-geri">← Katlara Dön</a>
+    </div>
+
+    @if (TempData["Hata"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Hata"]</div>
+    }
+
+    <div class="ekleme-karti">
+        <h5 class="form-baslik">➕ Yeni Kullanıcı Ekle (Oda veya Görevli)</h5>
+        <form action="/Admin/KullaniciEkle" method="post" class="row g-3">
+            <input type="hidden" name="katId" value="@Model.Id" />
+
+            <div class="col-md-4">
+                <label class="small fw-bold text-muted mb-1">Kullanıcı Adı</label>
+                <input type="text" name="kullaniciAdi" class="input-ozel" required />
+            </div>
+
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted mb-1">Rol / Yetki</label>
+                <select name="rol" id="ekleRolSelect" class="input-ozel">
+                    <option value="Oda">Oda (Sipariş Veren)</option>
+                    <option value="KatGorevlisi">Kat Görevlisi</option>
+                </select>
+            </div>
+
+            <div class="col-md-3" id="ekleOdaNumarasiAlani">
+                <label class="small fw-bold text-muted mb-1">Oda Numarası</label>
+                <input type="text" name="odaNumarasi" class="input-ozel" />
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn-kaydet">Ekle</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Kullanıcı Adı</th>
+                    <th>Rol</th>
+                    <th>Oda Numarası</th>
+                    <th class="text-end">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model.Kullanicilar)
+                {
+                    <tr>
+                        <td class="fw-bold" style="font-size: 1.1rem;">@user.KullaniciAdi</td>
+                        <td>
+                            @if (user.Rol == "Oda")
+                            {
+                                <span class="badge-rol rol-oda">Oda (Sipariş Veren)</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge-rol rol-gorevli">Kat Görevlisi</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.Rol == "Oda" && !string.IsNullOrEmpty(user.OdaNumarasi))
+                            {
+                                <span class="badge-oda">@user.OdaNumarasi</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">-</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-warning text-dark fw-bold me-2" data-bs-toggle="modal" data-bs-target="#userEditModal" onclick="userDuzenle(@user.Id, '@user.KullaniciAdi', '@user.Rol', '@user.OdaNumarasi')">Düzenle</button>
+                            <form action="/Admin/KullaniciSil" method="post" style="display:inline;" onsubmit="return confirm('Silmek istiyor musunuz?');">
+                                <input type="hidden" name="id" value="@user.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">Sil</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (Model.Kullanicilar.Count == 0)
+                {
+                    <tr><td colspan="4" class="text-center py-4 text-muted">Bu katta henüz kullanıcı yok.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="userEditModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Kullanıcı Düzenle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form action="/Admin/KullaniciGuncelle" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="editUserId" />
+
+                    <div class="mb-3">
+                        <label class="fw-bold small">Kullanıcı Adı</label>
+                        <input type="text" name="kullaniciAdi" id="editUserAd" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold small">Rol</label>
+                        <select name="rol" id="editUserRole" class="form-control">
+                            <option value="Oda">Oda (Sipariş Veren)</option>
+                            <option value="KatGorevlisi">Kat Görevlisi</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="editOdaNumarasiAlani">
+                        <label class="fw-bold small">Oda Numarası</label>
+                        <input type="text" name="odaNumarasi" id="editUserOda" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary">Güncelle</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Ekleme formunda rol değişince Oda Numarası kutusunu göster/gizle
+    document.getElementById('ekleRolSelect').addEventListener('change', function() {
+        var alan = document.getElementById('ekleOdaNumarasiAlani');
+        if(this.value === 'Oda') { alan.style.display = 'block'; }
+        else { alan.style.display = 'none'; }
+    });
+
+    // Düzenleme formunda rol değişince Oda Numarası kutusunu göster/gizle
+    document.getElementById('editUserRole').addEventListener('change', function() {
+        var alan = document.getElementById('editOdaNumarasiAlani');
+        if(this.value === 'Oda') { alan.style.display = 'block'; }
+        else { alan.style.display = 'none'; }
+    });
+
+    // Düzenleme butonuna basılınca modal'ı doldur
+    function userDuzenle(id, ad, rol, oda) {
+        document.getElementById('editUserId').value = id;
+        document.getElementById('editUserAd').value = ad;
+        document.getElementById('editUserRole').value = rol;
+        document.getElementById('editUserOda').value = oda !== '' ? oda : '';
+
+        // Modal açıldığında da gizle/göster ayarını yap
+        var alan = document.getElementById('editOdaNumarasiAlani');
+        if(rol === 'Oda') { alan.style.display = 'block'; }
+        else { alan.style.display = 'none'; }
+    }
+</script>

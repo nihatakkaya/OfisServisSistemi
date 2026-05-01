@@ -1,0 +1,245 @@
+﻿@model List<OfisServisSistemi.Models.SistemLog>
+@{
+    ViewData["Title"] = "Sistem İz Kayıtları (Audit Log) - SUBU OYS";
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+    }
+
+    .ana-konteyner {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 30px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 40px;
+        border-left: 6px solid var(--renk-teal);
+    }
+
+    .header-sol {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .header-logo {
+        height: 60px;
+        width: auto;
+    }
+
+    .header-baslik {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--renk-teal);
+        line-height: 1;
+        margin: 0;
+    }
+
+    .header-alt {
+        font-size: 0.9rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: 0.2s;
+        font-size: 0.95rem;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-teal);
+            color: white;
+            border-color: var(--renk-teal);
+        }
+
+    .log-kapsayici {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        padding: 30px;
+    }
+
+    .arama-kutusu {
+        width: 100%;
+        padding: 15px 20px;
+        border-radius: 8px;
+        border: 2px solid #e1e5eb;
+        font-size: 1.05rem;
+        margin-bottom: 25px;
+        outline: none;
+        transition: 0.2s;
+    }
+
+        .arama-kutusu:focus {
+            border-color: var(--renk-teal);
+            box-shadow: 0 0 0 4px rgba(0, 136, 122, 0.1);
+        }
+
+    .tablo-kapsayici {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .log-tablosu {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+        .log-tablosu th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 800;
+            text-align: left;
+            padding: 15px;
+            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .log-tablosu td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e5eb;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+
+        .log-tablosu tbody tr:hover {
+            background: #f0fbf9;
+        }
+
+    .badge-tarih {
+        background: #eef4ff;
+        color: var(--renk-ana-mavi);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .badge-islem {
+        background: #fff8e1;
+        color: #b58900;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-block;
+        border: 1px solid #ffe082;
+    }
+
+    .badge-kullanici {
+        font-weight: 800;
+        color: #2c3e50;
+    }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div class="header-sol">
+            <img src="/img/logo.png" class="header-logo" alt="Logo" />
+            <div>
+                <h1 class="header-baslik">Sistem İz Kayıtları (Audit Log)</h1>
+                <div class="header-alt">Sistemdeki Tüm Kritik Yönetimsel Hareketler</div>
+            </div>
+        </div>
+        <a href="/Admin/Index" class="btn-geri">Geri Dön</a>
+    </div>
+
+    <div class="log-kapsayici">
+        <input type="text" id="logArama" class="arama-kutusu" placeholder="🔍 Loglarda ara... (İşlem Türü, Kullanıcı, Detay vb.)" onkeyup="logFiltrele()">
+
+        <div class="tablo-kapsayici">
+            <table class="log-tablosu" id="logTablo">
+                <thead>
+                    <tr>
+                        <th width="180">Tarih / Saat</th>
+                        <th width="150">İşlemi Yapan</th>
+                        <th width="180">İşlem Türü</th>
+                        <th>İşlem Detayı</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="4" style="text-align:center; padding:30px; color:#888;">Henüz kaydedilmiş bir sistem hareketi bulunmuyor.</td></tr>
+                    }
+                    @foreach (var log in Model)
+                    {
+                        <tr>
+                            <td><span class="badge-tarih">@log.Tarih.ToString("dd.MM.yyyy HH:mm")</span></td>
+                            <td><span class="badge-kullanici">👤 @log.KullaniciAdi</span></td>
+                            <td><span class="badge-islem">@log.IslemTuru</span></td>
+                            <td>@log.Detay</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tabloda anlık olarak hızlı arama yapmayı sağlayan basit asistan
+    function logFiltrele() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("logArama");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("logTablo");
+        tr = table.getElementsByTagName("tr");
+
+        for (i = 1; i < tr.length; i++) {
+            tr[i].style.display = "none"; // Başlangıçta gizle
+            td = tr[i].getElementsByTagName("td");
+            for (var j = 0; j < td.length; j++) {
+                if (td[j]) {
+                    txtValue = td[j].textContent || td[j].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = ""; // Kelime geçiyorsa göster
+                        break;
+                    }
+                }
+            }
+        }
+    }
+</script>

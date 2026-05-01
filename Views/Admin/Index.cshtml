@@ -1,0 +1,329 @@
+﻿@model List<OfisServisSistemi.Models.Bina>
+@{
+    ViewData["Title"] = "Yönetici - SUBU OYS";
+}
+
+<style>
+    /* --- KURUMSAL RENK PALETİ --- */
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+        color: #333;
+    }
+
+    .ana-konteyner {
+        max-width: 1400px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 30px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 6px solid var(--renk-ana-mavi);
+    }
+
+    .header-sol {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .header-logo {
+        height: 60px;
+        width: auto;
+    }
+
+    .header-baslik {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        line-height: 1;
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+
+    .header-alt {
+        font-size: 0.9rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+        margin-top: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .header-sag {
+        display: flex;
+        gap: 15px;
+    }
+
+    .btn-header {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.2s;
+    }
+
+    .btn-istatistik {
+        background: var(--renk-teal);
+        color: white;
+        border-color: var(--renk-teal);
+    }
+
+        .btn-istatistik:hover {
+            background: #006d62;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 136, 122, 0.2);
+        }
+
+    .btn-cikis {
+        color: #dc3545;
+        border-color: #f8d7da;
+        background: #fff5f5;
+    }
+
+        .btn-cikis:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+    /* BİNALAR ALANI */
+    .ekleme-karti {
+        background: var(--renk-beyaz);
+        padding: 20px 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border-left: 4px solid var(--renk-teal);
+    }
+
+    .input-ozel {
+        flex-grow: 1;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border: 1px solid #dfe1e5;
+        font-size: 1rem;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .input-ozel:focus {
+            border-color: var(--renk-teal);
+            box-shadow: 0 0 0 3px rgba(0, 136, 122, 0.1);
+        }
+
+    .btn-ekle {
+        background-color: var(--renk-teal);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .btn-ekle:hover {
+            background-color: #006d62;
+        }
+
+    .bina-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 50px;
+    }
+
+    .bina-karti {
+        background: var(--renk-beyaz);
+        border-radius: 8px;
+        padding: 25px;
+        border: 1px solid #e1e5eb;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: 0.2s;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+        .bina-karti:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-color: #cdd3d8;
+        }
+
+    .bina-ikon {
+        font-size: 3rem;
+        text-align: center;
+        margin-bottom: 10px;
+        display: block;
+        opacity: 0.9;
+    }
+
+    .bina-ust {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #f0f2f5;
+        padding-bottom: 15px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .bina-adi {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        margin: 0;
+    }
+
+    .btn-yonet {
+        background-color: var(--renk-ana-mavi);
+        color: white;
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: 0.2s;
+        text-align: center;
+        font-size: 0.95rem;
+        margin-bottom: 10px;
+    }
+
+        .btn-yonet:hover {
+            background-color: #003282;
+        }
+
+    .aksiyon-butonlari {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .btn-aksiyon {
+        flex: 1;
+        padding: 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        background: #f8f9fa;
+        color: var(--renk-gri);
+        border: 1px solid #e1e5eb;
+        transition: 0.2s;
+    }
+
+        .btn-aksiyon:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+    .btn-sil:hover {
+        background: #fff5f5;
+        color: #dc3545;
+        border-color: #f8d7da;
+    }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div class="header-sol">
+            <img src="/img/logo.png" class="header-logo" alt="Logo" />
+            <div>
+                <h1 class="header-baslik">Yönetici</h1>
+                <div class="header-alt">Sistem Yönetimi</div>
+            </div>
+        </div>
+        <div class="header-sag">
+            <a href="/Admin/Istatistik" class="btn-header btn-istatistik">İstatistikler</a>
+            <a href="/Account/Logout" class="btn-header btn-cikis">Güvenli Çıkış</a>
+        </div>
+    </div>
+
+    <form action="/Admin/BinaEkle" method="post" class="ekleme-karti">
+        <input type="text" name="ad" class="input-ozel" placeholder="Yeni Bina Adı (Örn: Teknoloji Fakültesi)" required />
+        <button type="submit" class="btn-ekle">Bina Ekle</button>
+    </form>
+
+    <div class="bina-grid">
+        @foreach (var bina in Model)
+        {
+            <div class="bina-karti">
+                <div class="bina-ikon">🏢</div>
+
+                <div class="bina-ust">
+                    <h3 class="bina-adi">@bina.Ad</h3>
+                </div>
+
+                <a href="/Admin/BinaDetay/@bina.Id" class="btn-yonet">Katları Yönet</a>
+
+                <div class="aksiyon-butonlari">
+                    <button type="button" class="btn-aksiyon" data-bs-toggle="modal" data-bs-target="#duzenleModal" onclick="duzenleModaliDoldur(@bina.Id, '@bina.Ad')">Düzenle</button>
+                    <form action="/Admin/BinaSil" method="post" style="flex:1;" onsubmit="return confirm('Bu binayı silmek istediğinize emin misiniz?');">
+                        <input type="hidden" name="id" value="@bina.Id" />
+                        <button type="submit" class="btn-aksiyon btn-sil" style="width:100%;">Sil</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="duzenleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Binayı Düzenle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form action="/Admin/BinaGuncelle" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="modalBinaId" />
+                    <label class="form-label fw-bold small text-muted">Bina Adı</label>
+                    <input type="text" name="ad" id="modalBinaAd" class="form-control" required />
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary">Kaydet</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+    function duzenleModaliDoldur(id, ad) {
+        document.getElementById('modalBinaId').value = id;
+        document.getElementById('modalBinaAd').value = ad;
+    }
+</script>

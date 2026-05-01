@@ -1,0 +1,946 @@
+﻿@model List<OfisServisSistemi.Models.Talep>
+@{
+    ViewData["Title"] = "Oda - SUBU OYS";
+    var katUrunleri = ViewBag.KatUrunleri as List<OfisServisSistemi.Models.Urun> ?? new List<OfisServisSistemi.Models.Urun>();
+
+    string GetUrunIkon(string ad)
+    {
+        if (string.IsNullOrWhiteSpace(ad)) return "https://cdn-icons-png.flaticon.com/512/5164/5164023.png";
+
+        string k = ad.ToLower(new System.Globalization.CultureInfo("tr-TR"))
+                     .Replace("ı", "i").Replace("ü", "u").Replace("ö", "o")
+                     .Replace("ş", "s").Replace("ç", "c").Replace("ğ", "g");
+
+        if (k.Contains("cay") || k.Contains("oralet") || k.Contains("kusburnu") || k.Contains("ihlamur"))
+            return "https://cdn-icons-png.flaticon.com/512/3504/3504837.png";
+
+        if (k.Contains(" su") || k == "su")
+            return "https://cdn-icons-png.flaticon.com/512/824/824239.png";
+
+        if (k.Contains("soda") || k.Contains("maden") || k.Contains("kola") || k.Contains("fanta") || k.Contains("sprite") || k.Contains("ayran") || k.Contains("gazoz") || k.Contains("ice") || k.Contains("limonata"))
+            return "https://cdn-icons-png.flaticon.com/512/659/659385.png";
+
+        if (k.Contains("kahve") || k.Contains("nescafe") || k.Contains("espresso") || k.Contains("latte") || k.Contains("mocha") || k.Contains("macchiato"))
+            return "https://cdn-icons-png.flaticon.com/512/590/590749.png";
+
+        if (k.Contains("biskuvi") || k.Contains("kek") || k.Contains("cikolata") || k.Contains("kurabiye") || k.Contains("gofret") || k.Contains("cips"))
+            return "🍪";
+        if (k.Contains("seker")) return "🍬";
+        if (k.Contains("temiz")) return "🧹";
+        if (k.Contains("cop")) return "🗑️";
+
+        return "https://cdn-icons-png.flaticon.com/512/5164/5164023.png";
+    }
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+        --renk-uyari: #dc3545;
+        --renk-sari: #ffc107;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        color: #333;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .ana-konteyner {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 15px;
+    }
+
+    .oda-bilgi-bari {
+        background: var(--renk-beyaz);
+        border-radius: 16px;
+        padding: 30px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 8px solid var(--renk-ana-mavi);
+    }
+
+    .oda-info {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+    }
+
+    .oda-logo {
+        height: 75px;
+        width: auto;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
+    .oda-detay {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .oda-isim {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        line-height: 1;
+        letter-spacing: -1px;
+        margin-bottom: 5px;
+    }
+
+    .oda-kat {
+        font-size: 1rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+    }
+
+    .oda-secici {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 2px solid #e1e5eb;
+        font-weight: 700;
+        color: var(--renk-ana-mavi);
+        background-color: #f8f9fa;
+        cursor: pointer;
+        outline: none;
+        transition: 0.2s;
+        font-size: 0.95rem;
+    }
+
+        .oda-secici:focus, .oda-secici:hover {
+            border-color: var(--renk-teal);
+            background-color: #fff;
+        }
+
+    .header-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-ozel {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+    }
+
+        .btn-ozel:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    .btn-cikis {
+        border-color: #f8d7da;
+        color: #dc3545;
+        background: #fff5f5;
+    }
+
+        .btn-cikis:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+    .sayfa-izgarasi {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 25px;
+        align-items: start;
+    }
+
+    @@media (max-width: 992px) {
+        .sayfa-izgarasi {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .menu-kapsayici {
+        background: var(--renk-beyaz);
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+    }
+
+    .bolum-basligi {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #f1f3f5;
+        padding-bottom: 10px;
+    }
+
+    .urun-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .urun-karti {
+        background: #f8f9fa;
+        border: 2px solid #e1e5eb;
+        border-radius: 12px;
+        padding: 20px 15px;
+        text-align: center;
+        transition: 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+        .urun-karti.secili {
+            border-color: var(--renk-teal);
+            background: #f0fbf9;
+            box-shadow: 0 5px 15px rgba(0, 136, 122, 0.1);
+        }
+
+    .ikon-wrapper {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 60px;
+    }
+
+        .ikon-wrapper img {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+        }
+
+    .urun-karti.secili .ikon-wrapper {
+        transform: scale(1.1);
+    }
+
+    .urun-adi {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 15px;
+    }
+
+    .adet-kontrol {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .btn-adet {
+        background: #f1f3f5;
+        border: none;
+        width: 35px;
+        height: 35px;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-adet:hover {
+            background: #e2e6ea;
+        }
+
+    .input-adet {
+        width: 50px;
+        height: 35px;
+        border: none;
+        border-left: 1px solid #ccc;
+        border-right: 1px solid #ccc;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1rem;
+        color: #333;
+        outline: none;
+    }
+
+        .input-adet::-webkit-outer-spin-button, .input-adet::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+    .stok-durumu {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--renk-gri);
+        margin-top: 8px;
+    }
+
+        .stok-durumu.tukenmis {
+            color: var(--renk-uyari);
+        }
+
+    .hizmet-ekle-btn {
+        background: var(--renk-teal);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 700;
+        width: 100%;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .hizmet-ekle-btn.secili {
+            background: var(--renk-uyari);
+        }
+
+        .hizmet-ekle-btn:hover {
+            opacity: 0.9;
+        }
+
+    .sag-kolon {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .kutu-kapsayici {
+        background: var(--renk-beyaz);
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+    }
+
+    .sepet-listesi {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .sepet-satir {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px dashed #ccc;
+    }
+
+    .sepet-satir-ust {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sepet-urun-ad {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .sepet-urun-ad img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+    .sepet-adet {
+        background: var(--renk-ana-mavi);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .sepet-sil {
+        color: var(--renk-uyari);
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.2rem;
+        line-height: 1;
+        padding: 0 5px;
+        border: none;
+        background: none;
+    }
+
+    .input-sepet-not {
+        width: 100%;
+        padding: 6px 10px;
+        border: 1px solid #dfe1e5;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        outline: none;
+        background: white;
+    }
+
+        .input-sepet-not:focus {
+            border-color: var(--renk-teal);
+        }
+
+    .btn-gonder {
+        width: 100%;
+        height: 55px;
+        border-radius: 8px;
+        background-color: var(--renk-yesil);
+        border: none;
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: white;
+        transition: 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(27, 172, 80, 0.2);
+    }
+
+        .btn-gonder:hover {
+            background-color: #169c46;
+            transform: translateY(-2px);
+        }
+
+        .btn-gonder:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+    .siparis-karti {
+        background: #f8f9fa;
+        border-left: 5px solid #ccc;
+        margin-bottom: 12px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-right: 1px solid #eee;
+        border-top: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+    }
+
+    .durum-bekliyor {
+        border-left-color: var(--renk-ana-mavi);
+    }
+
+    .durum-teslim {
+        border-left-color: var(--renk-yesil);
+    }
+
+    .durum-iptal {
+        border-left-color: var(--renk-uyari);
+        opacity: 0.8;
+        background: #fff5f5;
+    }
+
+    .talep-baslik {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .talep-baslik img {
+            width: 20px;
+            height: 20px;
+            margin-right: 3px;
+        }
+
+    .talep-not {
+        color: #b58900;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .talep-iptal-notu {
+        color: var(--renk-uyari);
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-top: 5px;
+        padding: 5px;
+        border: 1px dashed #ffcdd2;
+        background: white;
+        border-radius: 4px;
+    }
+
+    .badge-hazirlaniyor {
+        background-color: #eef4ff;
+        color: var(--renk-ana-mavi);
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: inline-block;
+    }
+
+    .badge-iptal {
+        background-color: var(--renk-uyari);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: inline-block;
+    }
+
+    .karti-butonlar {
+        display: flex;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+
+    .btn-aksiyon {
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        color: white;
+    }
+
+    .btn-yesil {
+        background: var(--renk-yesil);
+    }
+
+        .btn-yesil:hover {
+            background: #169c46;
+        }
+
+    .btn-kirmizi {
+        background: var(--renk-uyari);
+    }
+
+        .btn-kirmizi:hover {
+            background: #bb2d3b;
+        }
+
+    .btn-gri {
+        background: #6c757d;
+    }
+
+        .btn-gri:hover {
+            background: #5c636a;
+        }
+
+    .btn-iptal-ufak {
+        background: none;
+        color: var(--renk-gri);
+        font-weight: 600;
+        border: none;
+        font-size: 0.85rem;
+        cursor: pointer;
+        padding: 5px;
+        text-decoration: underline;
+    }
+
+        .btn-iptal-ufak:hover {
+            color: var(--renk-uyari);
+        }
+</style>
+
+<div class="ana-konteyner">
+
+    <div class="oda-bilgi-bari">
+        <div class="oda-info">
+            <img src="/img/logo.png" class="oda-logo" alt="Logo" />
+            <div class="oda-detay">
+                <div class="oda-isim">ODA @ViewBag.OdaAdi</div>
+                @if (ViewBag.OdaListesi != null && ((List<OfisServisSistemi.Models.KullaniciOda>)ViewBag.OdaListesi).Count > 1)
+                {
+                    <select class="oda-secici" onchange="window.location.href='/Home/Oda?secilenBaglantiId=' + this.value;">
+                        @foreach (var oda in (List<OfisServisSistemi.Models.KullaniciOda>)ViewBag.OdaListesi)
+                        {
+                            if (oda.Id == ViewBag.AktifBaglantiId)
+                            {
+                                <option value="@oda.Id" selected>📍 @oda.Kat?.Ad (Oda @oda.OdaNumarasi)</option>
+                            }
+                            else
+                            {
+                                <option value="@oda.Id">@oda.Kat?.Ad (Oda @oda.OdaNumarasi)</option>
+                            }
+                        }
+                    </select>
+                }
+                else
+                {
+                    <div class="oda-kat">@ViewBag.KatAdi</div>
+                }
+            </div>
+        </div>
+        <div class="header-buttons">
+            <a href="/Home/Gecmis" class="btn-ozel">📋 Geçmiş Siparişler</a>
+            <a href="/Account/Logout" class="btn-ozel btn-cikis">⏻ Çıkış</a>
+        </div>
+    </div>
+
+    <input type="hidden" id="aktifBaglantiId" value="@ViewBag.AktifBaglantiId" />
+
+    <div class="sayfa-izgarasi">
+
+        <div class="menu-kapsayici">
+            <div class="bolum-basligi">Çay Ocağı Menüsü</div>
+
+            @if (!katUrunleri.Any())
+            {
+                <div style="text-align:center; padding: 40px; color:#888;">
+                    <h3 style="margin-bottom:10px;">📦 Menü Boş</h3>
+                    <p>Görevli tarafından henüz menüye ürün eklenmemiştir.</p>
+                </div>
+            }
+            else
+            {
+                <div class="urun-grid">
+                    @foreach (var urun in katUrunleri)
+                    {
+                        bool stokYok = urun.Miktar.HasValue && urun.Miktar.Value <= 0;
+                        string maxLimit = urun.Miktar.HasValue ? urun.Miktar.ToString() : "null";
+                        string uIkon = GetUrunIkon(urun.Ad);
+
+                        <div class="urun-karti" id="kutu-@urun.Id">
+                            <div class="ikon-wrapper">
+                                @if (uIkon.StartsWith("http"))
+                                {
+                                    <img src="@uIkon" />
+                                }
+                                else
+                                {
+
+                                    <span>@uIkon</span>
+                                }
+                            </div>
+                            <h5 class="urun-adi">@urun.Ad</h5>
+
+                            @if (stokYok)
+                            {
+                                <div class="stok-durumu tukenmis">Stok Tükendi</div>
+                            }
+                            else
+                            {
+                                <div class="adet-kontrol">
+                                    <button class="btn-adet" onclick="adetDegistir(@urun.Id, -1, '@urun.Ad', @maxLimit)">-</button>
+                                    <input type="number" id="adet-@urun.Id" class="input-adet" value="0" min="0"
+                                           @(urun.Miktar.HasValue ? $"max={urun.Miktar}" : "")
+                                           onchange="adetYazildi(@urun.Id, '@urun.Ad', @maxLimit)" />
+                                    <button class="btn-adet" onclick="adetDegistir(@urun.Id, 1, '@urun.Ad', @maxLimit)">+</button>
+                                </div>
+                                <div class="stok-durumu">
+                                    @(urun.Miktar.HasValue ? $"Stok: {urun.Miktar}" : "Sınırsız")
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="bolum-basligi" style="margin-top: 40px;">Hizmet Talepleri</div>
+            <div class="urun-grid">
+                <div class="urun-karti" id="kutu-temizlik">
+                    <div class="ikon-wrapper"><span>🧹</span></div>
+                    <h5 class="urun-adi">Temizlik</h5>
+                    <button class="hizmet-ekle-btn" id="btn-temizlik" onclick="hizmetEkleCikar('Temizlik')">Sepete Ekle</button>
+                </div>
+                <div class="urun-karti" id="kutu-cop">
+                    <div class="ikon-wrapper"><span>🗑️</span></div>
+                    <h5 class="urun-adi">Çöp Alımı</h5>
+                    <button class="hizmet-ekle-btn" id="btn-cop" onclick="hizmetEkleCikar('Çöp Alımı')">Sepete Ekle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sag-kolon">
+
+            <div class="kutu-kapsayici" style="border-top: 5px solid var(--renk-teal);">
+                <div class="bolum-basligi" style="border:none; margin-bottom: 10px;">🛒 Sepetiniz</div>
+
+                <div id="sepetBos" style="text-align:center; padding: 20px; color:#aaa; font-weight:600;">
+                    Sepetinizde ürün bulunmuyor.
+                </div>
+
+                <div class="sepet-listesi" id="sepetListesi" style="display:none;"></div>
+
+                <button class="btn-gonder" id="btnSiparisVer" onclick="sepetiOnayla()" disabled>SİPARİŞİ GÖNDER</button>
+            </div>
+
+            <div class="kutu-kapsayici">
+                <div class="bolum-basligi" style="border:none; font-size:1.1rem; color:var(--renk-gri);">Durum Panosu</div>
+
+                @foreach (var item in Model)
+                {
+                    string borderClass = item.Durum == "Bekliyor" ? "durum-bekliyor" : (item.Durum == "TeslimEdildi" ? "durum-teslim" : "durum-iptal");
+                    string tIkon = GetUrunIkon(item.IslemTuru);
+
+                    <div class="siparis-karti @borderClass">
+                        <div style="width:100%;">
+                            <div class="talep-baslik">
+                                @if (tIkon.StartsWith("http"))
+                                {
+                                    <img src="@tIkon" />
+                                }
+                                else
+                                {
+
+                                    <span>@tIkon</span>
+                                }
+                                @item.IslemTuru
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(item.Aciklama) && item.Aciklama != "-")
+                            {
+                                <div class="talep-not">Kendi Notunuz: @item.Aciklama</div>
+                            }
+
+                            @if (item.Durum == "Bekliyor")
+                            {
+                                <span class="badge-hazirlaniyor">Hazırlanıyor</span>
+                            }
+                            else if (item.Durum == "IptalEdildi")
+                            {
+                                <span class="badge-iptal">Görevli İptal Etti</span>
+                                @if (!string.IsNullOrEmpty(item.IptalNotu))
+                                {
+                                    <div class="talep-iptal-notu">İptal Sebebi: @item.IptalNotu</div>
+                                }
+                            }
+                        </div>
+
+                        <div class="karti-butonlar">
+                            @if (item.Durum == "Bekliyor")
+                            {
+                                <button class="btn-iptal-ufak" onclick="siparisSil(@item.Id)">İptal Et</button>
+                            }
+                            else if (item.Durum == "TeslimEdildi")
+                            {
+                                <button class="btn-aksiyon btn-yesil" onclick="onayla(@item.Id)">Aldım</button>
+                                <button class="btn-aksiyon btn-kirmizi" onclick="reddet(@item.Id)">Gelmedi</button>
+                            }
+                            else if (item.Durum == "IptalEdildi")
+                            {
+                                <button class="btn-aksiyon btn-gri" onclick="reddet(@item.Id)">Anladım / Gizle</button>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (Model.Count == 0)
+                {
+                    <div style="text-align:center; padding: 20px; color:#aaa; font-weight:600;">Bekleyen işleminiz yok.</div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder().withUrl("/ofisHub").withAutomaticReconnect().build();
+    connection.start().catch(err => console.error(err));
+    connection.on("SayfaGuncelle", function () { location.reload(); });
+
+    let sepet = {};
+
+    function adetDegistir(urunId, degisim, urunAdi, maxStok) {
+        let input = document.getElementById("adet-" + urunId);
+        let kutu = document.getElementById("kutu-" + urunId);
+        let yeniDeger = parseInt(input.value) + degisim;
+
+        if(yeniDeger < 0) yeniDeger = 0;
+        if(maxStok !== null && yeniDeger > maxStok) {
+            yeniDeger = maxStok;
+            alert(`Dikkat! Stokta en fazla ${maxStok} adet ürün bulunmaktadır.`);
+        }
+
+        input.value = yeniDeger;
+        sepetiGuncelle(urunAdi, yeniDeger, kutu);
+    }
+
+    function adetYazildi(urunId, urunAdi, maxStok) {
+        let input = document.getElementById("adet-" + urunId);
+        let kutu = document.getElementById("kutu-" + urunId);
+        let yeniDeger = parseInt(input.value);
+
+        if(isNaN(yeniDeger) || yeniDeger < 0) { yeniDeger = 0; input.value = 0; }
+        if(maxStok !== null && yeniDeger > maxStok) {
+            yeniDeger = maxStok;
+            input.value = maxStok;
+            alert(`Dikkat! Stokta en fazla ${maxStok} adet ürün bulunmaktadır.`);
+        }
+
+        sepetiGuncelle(urunAdi, yeniDeger, kutu);
+    }
+
+    function hizmetEkleCikar(hizmetAdi) {
+        let kutu = hizmetAdi === "Temizlik" ? document.getElementById("kutu-temizlik") : document.getElementById("kutu-cop");
+        let btn = hizmetAdi === "Temizlik" ? document.getElementById("btn-temizlik") : document.getElementById("btn-cop");
+
+        if(sepet[hizmetAdi]) {
+            delete sepet[hizmetAdi];
+            kutu.classList.remove("secili");
+            btn.classList.remove("secili");
+            btn.innerText = "Sepete Ekle";
+        } else {
+            sepet[hizmetAdi] = { miktar: 1, not: "" };
+            kutu.classList.add("secili");
+            btn.classList.add("secili");
+            btn.innerText = "Sepetten Çıkar";
+        }
+        arayuzuCiz();
+    }
+
+    function sepetiGuncelle(urunAdi, miktar, kutuElementi) {
+        if(miktar > 0) {
+            if(!sepet[urunAdi]) sepet[urunAdi] = { miktar: miktar, not: "" };
+            else sepet[urunAdi].miktar = miktar;
+            kutuElementi.classList.add("secili");
+        } else {
+            delete sepet[urunAdi];
+            kutuElementi.classList.remove("secili");
+        }
+        arayuzuCiz();
+    }
+
+    function notYazildi(urunAdi, deger) {
+        if(sepet[urunAdi]) {
+            sepet[urunAdi].not = deger;
+        }
+    }
+
+    function sepettenSil(urunAdi) {
+        delete sepet[urunAdi];
+
+        document.querySelectorAll('.urun-karti').forEach(k => {
+            if(k.querySelector('.urun-adi').innerText === urunAdi) {
+                k.classList.remove("secili");
+                let inp = k.querySelector('.input-adet');
+                if(inp) inp.value = 0;
+                let btn = k.querySelector('.hizmet-ekle-btn');
+                if(btn) { btn.classList.remove("secili"); btn.innerText = "Sepete Ekle"; }
+            }
+        });
+        arayuzuCiz();
+    }
+
+    function getJsIkon(ad) {
+        let k = ad.toLowerCase();
+        k = k.replace(/ı/g, 'i').replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ç/g, 'c').replace(/ğ/g, 'g');
+
+        if(k.includes("cay") || k.includes("oralet") || k.includes("kusburnu") || k.includes("ihlamur")) return '<img src="https://cdn-icons-png.flaticon.com/512/3504/3504837.png"/>';
+        if(k.includes(" su") || k === "su") return '<img src="https://cdn-icons-png.flaticon.com/512/824/824239.png"/>';
+        if(k.includes("soda") || k.includes("maden") || k.includes("kola") || k.includes("fanta") || k.includes("sprite") || k.includes("ayran") || k.includes("gazoz") || k.includes("ice") || k.includes("limonata")) return '<img src="https://cdn-icons-png.flaticon.com/512/659/659385.png"/>';
+        if(k.includes("kahve") || k.includes("nescafe") || k.includes("espresso") || k.includes("latte") || k.includes("mocha") || k.includes("macchiato")) return '<img src="https://cdn-icons-png.flaticon.com/512/590/590749.png"/>';
+        if(k.includes("temiz")) return '<span>🧹</span>';
+        if(k.includes("cop")) return '<span>🗑️</span>';
+        if(k.includes("seker")) return '<span>🍬</span>';
+        if(k.includes("biskuvi") || k.includes("kek") || k.includes("cikolata") || k.includes("kurabiye") || k.includes("gofret") || k.includes("cips")) return '<span>🍪</span>';
+        return '<img src="https://cdn-icons-png.flaticon.com/512/5164/5164023.png"/>';
+    }
+
+    function arayuzuCiz() {
+        let listDiv = document.getElementById("sepetListesi");
+        let bosDiv = document.getElementById("sepetBos");
+        let btnSiparis = document.getElementById("btnSiparisVer");
+
+        let urunSayisi = Object.keys(sepet).length;
+
+        if(urunSayisi === 0) {
+            listDiv.style.display = "none";
+            bosDiv.style.display = "block";
+            btnSiparis.disabled = true;
+            listDiv.innerHTML = "";
+            return;
+        }
+
+        listDiv.style.display = "flex";
+        bosDiv.style.display = "none";
+        btnSiparis.disabled = false;
+
+        let html = "";
+        for(let ad in sepet) {
+            let urun = sepet[ad];
+            let sIkon = getJsIkon(ad);
+
+            html += `
+                <div class="sepet-satir">
+                    <div class="sepet-satir-ust">
+                        <div class="sepet-urun-ad">
+                            ${sIkon}
+                            ${urun.miktar > 1 ? `<span class="sepet-adet">${urun.miktar}</span>` : ''}
+                            ${ad}
+                        </div>
+                        <button class="sepet-sil" onclick="sepettenSil('${ad}')">✖</button>
+                    </div>
+                    <input type="text" class="input-sepet-not" placeholder="Bu ürüne özel not (İsteğe bağlı)" value="${urun.not}" oninput="notYazildi('${ad}', this.value)" />
+                </div>
+            `;
+        }
+        listDiv.innerHTML = html;
+    }
+
+    function sepetiOnayla() {
+        var baglantiId = document.getElementById("aktifBaglantiId").value;
+
+        let gonderilecekVeri = [];
+        for(let ad in sepet) {
+            gonderilecekVeri.push({ UrunAdi: ad, Miktar: sepet[ad].miktar, Not: sepet[ad].not });
+        }
+
+        if (gonderilecekVeri.length === 0) return;
+
+        var btn = document.getElementById("btnSiparisVer");
+        btn.disabled = true; btn.innerText = "Siparişiniz İletiliyor...";
+
+        fetch('/Home/SepetSiparisVer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ baglantiId: parseInt(baglantiId), sepet: gonderilecekVeri })
+        })
+        .then(response => {
+            if (response.ok) location.reload();
+            else { alert("Hata oluştu."); btn.disabled = false; btn.innerText = "SİPARİŞİ GÖNDER"; }
+        });
+    }
+
+    function siparisSil(id) { if(confirm("Talebi iptal etmek istiyor musunuz?")) fetch(`/Home/TalepSil?id=${id}`, { method: 'POST' }); }
+    function onayla(id) { fetch(`/Home/OdaOnayladi?id=${id}`, { method: 'POST' }); }
+    function reddet(id) { fetch(`/Home/OdaReddetti?id=${id}`, { method: 'POST' }); }
+</script>

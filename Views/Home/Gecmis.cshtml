@@ -1,0 +1,387 @@
+﻿@model List<OfisServisSistemi.Models.Talep>
+@{
+    ViewData["Title"] = "Geçmiş Kayıtlar";
+    var secilenTarih = (DateTime)ViewBag.SecilenTarih;
+
+    // Controller'dan gelen sözlüğü alıyoruz
+    var odaSozlugu = ViewBag.OdaSozlugu as Dictionary<string, string>;
+}
+
+<style>
+    /* --- KURUMSAL RENK PALETİ --- */
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-teal: #00887a;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        color: #333;
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    }
+
+    .ana-konteyner {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    /* HEADER */
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 16px;
+        padding: 25px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 8px solid var(--renk-ana-mavi);
+    }
+
+    .header-sol {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .header-logo {
+        height: 60px;
+        width: auto;
+    }
+
+    .header-baslik {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+
+    .header-alt {
+        font-size: 0.95rem;
+        color: var(--renk-gri);
+        font-weight: 600;
+        margin-top: 5px;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    /* FİLTRE KARTI */
+    .filter-card {
+        background: var(--renk-beyaz);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .filter-form {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-grow: 1;
+    }
+
+    .lbl-tarih {
+        font-weight: 700;
+        color: #444;
+        font-size: 1rem;
+    }
+
+    .input-tarih {
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid #dfe1e5;
+        font-size: 1rem;
+        color: #333;
+        outline: none;
+        transition: 0.3s;
+        background-color: #fcfcfc;
+    }
+
+        .input-tarih:focus {
+            border-color: var(--renk-teal);
+            box-shadow: 0 0 0 3px rgba(0, 136, 122, 0.1);
+            background: white;
+        }
+
+    .btn-filtre {
+        background-color: var(--renk-teal);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 700;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-filtre:hover {
+            background-color: #006d62;
+            transform: translateY(-1px);
+        }
+
+    .secilen-bilgi {
+        font-weight: 600;
+        color: var(--renk-ana-mavi);
+        font-size: 1.1rem;
+    }
+
+    /* TABLO TASARIMI */
+    .table-container {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        overflow: hidden;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .custom-table thead {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #eef0f2;
+        }
+
+        .custom-table th {
+            padding: 18px 25px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--renk-ana-mavi);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .custom-table td {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: middle;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .custom-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .custom-table tr:hover {
+            background-color: #fbfbfb;
+        }
+
+    /* HÜCRE STİLLERİ */
+    .oda-badge {
+        font-weight: 700;
+        color: var(--renk-ana-mavi);
+        background: #eef4ff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        border: 1px solid #dbeafe;
+    }
+
+    .hizmet-txt {
+        font-weight: 600;
+        color: #444;
+        font-size: 1rem;
+    }
+
+    .not-txt {
+        color: #dc3545;
+        font-style: italic;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .not-yok {
+        color: #adb5bd;
+        font-size: 0.8rem;
+    }
+
+    .saat-txt {
+        font-family: 'Consolas', monospace;
+        color: var(--renk-gri);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .badge-durum {
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .badge-basarili {
+        background-color: #def7ec;
+        color: #03543f;
+        border: 1px solid #bcf0da;
+    }
+
+    .badge-basarisiz {
+        background-color: #fde8e8;
+        color: #9b1c1c;
+        border: 1px solid #fbd5d5;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        opacity: 0.6;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        display: block;
+        filter: grayscale(100%);
+    }
+</style>
+
+<div class="ana-konteyner">
+
+    <div class="header-bar">
+        <div class="header-sol">
+            <img src="/img/logo.png" class="header-logo" alt="Logo" />
+            <div>
+                <div class="header-baslik">Geçmiş Siparişler</div>
+                <div class="header-alt">Tarih bazlı işlem kayıtları</div>
+            </div>
+        </div>
+
+        @{
+            string geriLink = "/Home/Oda";
+            string butonYazisi = "Oda Paneline Dön";
+            if (User.IsInRole("KatGorevlisi"))
+            {
+                geriLink = "/Home/Index";
+                butonYazisi = "Yönetim Paneline Dön";
+            }
+        }
+        <a href="@geriLink" class="btn-geri">← @butonYazisi</a>
+    </div>
+
+    <div class="filter-card">
+        <form action="/Home/Gecmis" method="get" class="filter-form">
+            <label class="lbl-tarih">📅 Tarih Seçiniz:</label>
+            <input type="date" name="tarih" class="input-tarih" value="@secilenTarih.ToString("yyyy-MM-dd")" />
+            <button type="submit" class="btn-filtre">Kayıtları Getir</button>
+        </form>
+
+        <div class="secilen-bilgi">
+            Seçilen: @secilenTarih.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+        </div>
+    </div>
+
+    <div class="table-container">
+        @if (Model.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th width="15%">ODA</th>
+                            <th width="15%">HİZMET</th>
+                            <th width="35%">NOT</th>
+                            <th width="15%">SAAT</th>
+                            <th width="20%">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            //sözlüğe bak, gerçek oda numarası varsa onu yaz, yoksa eski mantıkla adını yaz
+                            string gosterilecekOda = item.OdaAdi;
+
+                            if (odaSozlugu != null && odaSozlugu.ContainsKey(item.OdaAdi) && !string.IsNullOrEmpty(odaSozlugu[item.OdaAdi]))
+                            {
+                                gosterilecekOda = odaSozlugu[item.OdaAdi];
+                            }
+                            else
+                            {
+                                if (item.OdaAdi.Contains("-")) { gosterilecekOda = item.OdaAdi.Split('-')[1]; }
+                                else if (item.OdaAdi.Contains("_")) { gosterilecekOda = item.OdaAdi.Split('_')[1]; }
+                            }
+
+                            <tr>
+                                <td>
+                                    <span class="oda-badge">ODA @gosterilecekOda</span>
+                                </td>
+                                <td>
+                                    <span class="hizmet-txt">@item.IslemTuru</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Aciklama) && item.Aciklama != "-")
+                                    {
+                                        <span class="not-txt">"@item.Aciklama"</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="not-yok">- Not Yok -</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="saat-txt">@item.OlusturulmaTarihi.ToString("HH:mm")</span>
+                                </td>
+                                <td>
+                                    @if (item.Durum == "Tamamlandi")
+                                    {
+                                        <span class="badge-durum badge-basarili">✅ Teslim Edildi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-durum badge-basarisiz">❌ Gelmedi</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <span class="empty-icon">📂</span>
+                <h4>Bu tarihe ait kayıt bulunamadı.</h4>
+                <p>Farklı bir tarih seçerek tekrar deneyebilirsiniz.</p>
+            </div>
+        }
+    </div>
+</div>
