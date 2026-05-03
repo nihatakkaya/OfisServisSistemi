@@ -34,7 +34,7 @@
         align-items: center;
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         border: 1px solid #e1e5eb;
-        margin-bottom: 40px;
+        margin-bottom: 20px; /* Yeni arama bari için boşluk azaltıldı */
         border-left: 6px solid var(--renk-ana-mavi);
     }
 
@@ -85,6 +85,19 @@
             color: white;
             border-color: var(--renk-ana-mavi);
         }
+
+    /* YENİ EKLENEN: FİLTRE BARI TASARIMI */
+    .filtre-bari {
+        background: var(--renk-beyaz);
+        padding: 15px 40px;
+        border-radius: 12px;
+        margin-bottom: 40px;
+        border: 1px solid #e1e5eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
 
     .grafik-alani {
         display: grid;
@@ -302,11 +315,27 @@
             </div>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="/Admin/ExcelAktar" class="btn-geri" style="color:#1bac50; border-color:#1bac50; background:#e6f4ea;">
+            <!-- EXCEL LİNKİ FİLTRE TARİHİ İLE GÜNCELLENDİ -->
+            <a href="/Admin/ExcelAktar?filterDate=@(ViewBag.SecilenTarih)" class="btn-geri" style="color:#1bac50; border-color:#1bac50; background:#e6f4ea;">
                 <img src="https://cdn-icons-png.flaticon.com/512/15465/15465638.png" style="width:20px; height:20px; margin-right:8px; object-fit:contain;" alt="Excel" /> Excel Raporu İndir
             </a>
             <a href="/Admin/Index" class="btn-geri">Geri Dön</a>
         </div>
+    </div>
+
+    <!-- YENİ EKLENEN: FİLTRE BARI -->
+    <div class="filtre-bari">
+        <div style="font-weight: 800; color: var(--renk-ana-mavi); font-size: 1.1rem;">
+            📅 Raporlama Periyodu @(ViewBag.SecilenTarih != null ? $"- {Convert.ToDateTime(ViewBag.SecilenTarih):dd.MM.yyyy}" : "- Tüm Zamanlar")
+        </div>
+        <form method="get" action="/Admin/Istatistik" style="display:flex; gap:10px; align-items:center;">
+            <input type="date" name="filterDate" value="@ViewBag.SecilenTarih" style="padding:10px 15px; border:1px solid #ccc; border-radius:6px; outline:none; font-family:inherit; font-weight:600; color:#495057;" />
+            <button type="submit" style="background: var(--renk-ana-mavi); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight:700; transition:0.2s;">Getir</button>
+            @if (ViewBag.SecilenTarih != null)
+            {
+                <a href="/Admin/Istatistik" style="background: #fff5f5; color: #dc3545; border: 1px solid #ffcdd2; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight:700; text-decoration:none; transition:0.2s;">Tümünü Göster</a>
+            }
+        </form>
     </div>
 
     <div class="grafik-alani">
@@ -360,7 +389,7 @@
         const alan = document.getElementById("raporAlani");
 
         if (!hiyerarsiVerisi || hiyerarsiVerisi.length === 0) {
-            alan.innerHTML = "<div style='padding:20px; text-align:center; color:#888;'>Henüz yeterli tüketim verisi bulunmuyor.</div>";
+            alan.innerHTML = "<div style='padding:20px; text-align:center; color:#888;'>Bu tarihte veya genel toplamda yeterli tüketim verisi bulunmuyor.</div>";
             return;
         }
 

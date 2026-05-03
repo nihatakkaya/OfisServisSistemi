@@ -17,7 +17,6 @@ namespace OfisServisSistemi.Controllers
             _context = context;
         }
 
-        // --- YENİ EKLENEN: OTOMATİK LOG KAYDETME ASİSTANI ---
         private void LogKaydet(string islemTuru, string detay)
         {
             var aktifKullanici = User.Identity?.Name ?? "Sistem";
@@ -30,7 +29,6 @@ namespace OfisServisSistemi.Controllers
             });
             _context.SaveChanges();
         }
-        // ----------------------------------------------------
 
         public IActionResult Index()
         {
@@ -41,28 +39,41 @@ namespace OfisServisSistemi.Controllers
             return View(binalar);
         }
 
-        // --- YENİ EKLENEN: SİSTEM İZ KAYITLARI EKRANI ---
         public IActionResult SistemIzKayitlari()
         {
-            // En yeni loglar en üstte olacak şekilde son 500 kaydı getiriyoruz (Performans için)
             var loglar = _context.SistemLoglari
                                  .OrderByDescending(l => l.Tarih)
                                  .Take(500)
                                  .ToList();
             return View(loglar);
         }
-        // ------------------------------------------------
 
-        public async Task<IActionResult> Istatistik()
+        // --- GÜNCELLEME: filterDate Parametresi Eklendi ---
+        public async Task<IActionResult> Istatistik(DateTime? filterDate)
         {
             var bugun = DateTime.Today;
             var trCulture = new System.Globalization.CultureInfo("tr-TR");
 
+            // Özet kartları her zaman bugünün ve genel toplamı gösterir
             ViewBag.GunlukTalep = await _context.Talepler.CountAsync(t => t.OlusturulmaTarihi.Date == bugun);
             ViewBag.BekleyenTalep = await _context.Talepler.CountAsync(t => t.Durum == "Bekliyor");
             ViewBag.ToplamTamamlanan = await _context.Talepler.CountAsync(t => t.Durum == "Tamamlandi" || t.Durum == "TeslimEdildi");
 
-            var tumTalepler = await _context.Talepler.ToListAsync();
+            // Dinamik Filtreleme Mantığı
+            var baseQuery = _context.Talepler.AsQueryable();
+
+            if (filterDate.HasValue)
+            {
+                baseQuery = baseQuery.Where(t => t.OlusturulmaTarihi.Date == filterDate.Value.Date);
+                ViewBag.SecilenTarih = filterDate.Value.ToString("yyyy-MM-dd"); // Takvime geri göndermek için
+            }
+            else
+            {
+                ViewBag.SecilenTarih = null;
+            }
+
+            // Seçilen tarihe (veya tüm zamanlara) ait verileri çek
+            var tumTalepler = await baseQuery.ToListAsync();
 
             var islemDagilimi = tumTalepler
                 .GroupBy(t => trCulture.TextInfo.ToTitleCase(t.IslemTuru.Trim().ToLower(trCulture)))
@@ -159,7 +170,7 @@ namespace OfisServisSistemi.Controllers
             {
                 _context.Binalar.Add(new Bina { Ad = ad.Trim() });
                 _context.SaveChanges();
-                LogKaydet("Bina Eklendi", $"Sisteme '{ad.Trim()}' adında yeni bir bina eklendi."); // LOG
+                LogKaydet("Bina Eklendi", $"Sisteme '{ad.Trim()}' adında yeni bir bina eklendi.");
             }
             return RedirectToAction("Index");
         }
@@ -178,7 +189,7 @@ namespace OfisServisSistemi.Controllers
                     foreach (var baglanti in baglantilar) baglanti.SilindiMi = true;
                 }
                 _context.SaveChanges();
-                LogKaydet("Bina Silindi", $"Sistemden '{bina.Ad}' adlı bina silindi."); // LOG
+                LogKaydet("Bina Silindi", $"Sistemden '{bina.Ad}' adlı bina silindi.");
             }
             return RedirectToAction("Index");
         }
@@ -192,7 +203,7 @@ namespace OfisServisSistemi.Controllers
                 string eskiAd = bina.Ad;
                 bina.Ad = ad.Trim();
                 _context.SaveChanges();
-                LogKaydet("Bina Güncellendi", $"'{eskiAd}' adlı binanın adı '{ad.Trim()}' olarak değiştirildi."); // LOG
+                LogKaydet("Bina Güncellendi", $"'{eskiAd}' adlı binanın adı '{ad.Trim()}' olarak değiştirildi.");
             }
             return RedirectToAction("Index");
         }
@@ -216,7 +227,7 @@ namespace OfisServisSistemi.Controllers
             {
                 _context.Katlar.Add(new Kat { Ad = ad.Trim(), BinaId = binaId });
                 _context.SaveChanges();
-                LogKaydet("Kat Eklendi", $"Bina ID: {binaId} içerisine '{ad.Trim()}' adlı yeni bir kat eklendi."); // LOG
+                LogKaydet("Kat Eklendi", $"Bina ID: {binaId} içerisine '{ad.Trim()}' adlı yeni bir kat eklendi.");
             }
             return RedirectToAction("BinaDetay", new { id = binaId });
         }
@@ -231,7 +242,7 @@ namespace OfisServisSistemi.Controllers
                 var baglantilar = _context.KullaniciOdalari.Where(ko => ko.KatId == kat.Id).ToList();
                 foreach (var baglanti in baglantilar) baglanti.SilindiMi = true;
                 _context.SaveChanges();
-                LogKaydet("Kat Silindi", $"Sistemden '{kat.Ad}' adlı kat silindi."); // LOG
+                LogKaydet("Kat Silindi", $"Sistemden '{kat.Ad}' adlı kat silindi.");
                 return RedirectToAction("BinaDetay", new { id = kat.BinaId });
             }
             return RedirectToAction("Index");
@@ -246,7 +257,7 @@ namespace OfisServisSistemi.Controllers
                 string eskiAd = kat.Ad;
                 kat.Ad = ad.Trim();
                 _context.SaveChanges();
-                LogKaydet("Kat Güncellendi", $"'{eskiAd}' adlı katın adı '{ad.Trim()}' olarak değiştirildi."); // LOG
+                LogKaydet("Kat Güncellendi", $"'{eskiAd}' adlı katın adı '{ad.Trim()}' olarak değiştirildi.");
                 return RedirectToAction("BinaDetay", new { id = kat.BinaId });
             }
             return RedirectToAction("Index");
@@ -296,7 +307,7 @@ namespace OfisServisSistemi.Controllers
             {
                 _context.KullaniciOdalari.Add(new KullaniciOda { KullaniciId = user.Id, KatId = katId, OdaNumarasi = (rol == "Oda") ? odaNumarasi : null });
                 _context.SaveChanges();
-                LogKaydet("Kullanıcı Eklendi", $"'{kullaniciAdi}' adlı kullanıcı, Kat ID: {katId} içerisine {rol} yetkisiyle eklendi."); // LOG
+                LogKaydet("Kullanıcı Eklendi", $"'{kullaniciAdi}' adlı kullanıcı, Kat ID: {katId} içerisine {rol} yetkisiyle eklendi.");
             }
             else { TempData["Hata"] = "Bu kullanıcı zaten bu odada tanımlı!"; }
 
@@ -311,7 +322,7 @@ namespace OfisServisSistemi.Controllers
             {
                 baglanti.SilindiMi = true;
                 _context.SaveChanges();
-                LogKaydet("Kullanıcı Silindi", $"'{baglanti.Kullanici.KullaniciAdi}' adlı kullanıcının bağlantısı silindi."); // LOG
+                LogKaydet("Kullanıcı Silindi", $"'{baglanti.Kullanici.KullaniciAdi}' adlı kullanıcının bağlantısı silindi.");
                 return RedirectToAction("KatDetay", new { id = baglanti.KatId });
             }
             return RedirectToAction("Index");
@@ -334,25 +345,29 @@ namespace OfisServisSistemi.Controllers
                     baglanti.Kullanici.KullaniciAdi = kullaniciAdi;
 
                 _context.SaveChanges();
-                LogKaydet("Kullanıcı Güncellendi", $"'{kullaniciAdi}' adlı kullanıcının yetkisi {eskiRol} -> {rol} olarak değiştirildi."); // LOG
+                LogKaydet("Kullanıcı Güncellendi", $"'{kullaniciAdi}' adlı kullanıcının yetkisi {eskiRol} -> {rol} olarak değiştirildi.");
                 return RedirectToAction("KatDetay", new { id = baglanti.KatId });
             }
             return RedirectToAction("Index");
         }
-        // --- YENİ EKLENEN: EXCEL (CSV) ÇIKTI ALMA METODU ---
-        [HttpGet]
-        public async Task<IActionResult> ExcelAktar()
-        {
-            var tamamlananTalepler = await _context.Talepler
-                .Where(t => t.Durum == "Tamamlandi" || t.Durum == "TeslimEdildi")
-                .ToListAsync();
 
+        // --- GÜNCELLEME: filterDate Parametresi Eklendi ---
+        [HttpGet]
+        public async Task<IActionResult> ExcelAktar(DateTime? filterDate)
+        {
+            var query = _context.Talepler.Where(t => t.Durum == "Tamamlandi" || t.Durum == "TeslimEdildi");
+
+            if (filterDate.HasValue)
+            {
+                query = query.Where(t => t.OlusturulmaTarihi.Date == filterDate.Value.Date);
+            }
+
+            var tamamlananTalepler = await query.ToListAsync();
             var binalar = await _context.Binalar.Include(b => b.Katlar).Where(b => !b.SilindiMi).ToListAsync();
             var trCulture = new System.Globalization.CultureInfo("tr-TR");
 
             var builder = new System.Text.StringBuilder();
 
-            // Excel'in sütun başlıkları
             builder.AppendLine("Bina Adi;Kat Adi;Oda Numarasi;Siparis Veren;Urun Adi;Miktar;Siparis Tarihi");
 
             foreach (var bina in binalar)
@@ -366,17 +381,19 @@ namespace OfisServisSistemi.Controllers
                         string urunAdi = trCulture.TextInfo.ToTitleCase(talep.IslemTuru.Trim().ToLower(trCulture));
                         int miktar = talep.Miktar > 0 ? talep.Miktar : 1;
 
-                        // Her bir siparişi Excel satırı olarak alt alta ekliyoruz (Türkiye Excel standardı olan noktalı virgül ile ayırarak)
                         builder.AppendLine($"{bina.Ad};{kat.Ad};{talep.OdaAdi};{talep.SiparisVeren};{urunAdi};{miktar};{talep.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm")}");
                     }
                 }
             }
 
-            // Türkçe karakterlerin Excel'de bozuk çıkmaması için UTF-8 BOM (Byte Order Mark) ekliyoruz
             var bytes = System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(builder.ToString())).ToArray();
 
-            // Dosyayı kullanıcıya indiriyoruz
-            return File(bytes, "text/csv", $"Tuketim_Raporu_{DateTime.Now:yyyy_MM_dd}.csv");
+            // Dosya ismini tarihe göre ayarlayalım
+            string fileName = filterDate.HasValue
+                ? $"Tuketim_Raporu_{filterDate.Value:yyyy_MM_dd}.csv"
+                : $"Tuketim_Raporu_TumZamanlar_{DateTime.Now:yyyy_MM_dd}.csv";
+
+            return File(bytes, "text/csv", fileName);
         }
     }
 }
