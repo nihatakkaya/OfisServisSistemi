@@ -11,7 +11,7 @@ Geleneksel diyafon veya anlık mesajlaşma uygulamaları (WhatsApp vb.) üzerind
 
 ---
 
-## 💎 Projede Geliştirilen Temel Özellikler
+##  Projede Geliştirilen Temel Özellikler
 
 ### 1. Gerçek Zamanlı Sipariş Yönetimi (SignalR)
 Personel tarafından verilen siparişler, sayfa yenilenmesine gerek kalmadan milisaniyeler içinde ilgili kat görevlisinin ekranına düşer ve sesli bildirim ile uyarı verir. Durum güncellemeleri (Hazırlanıyor, Teslim Edildi, İptal Edildi) anlık olarak çift taraflı senkronize edilir.
@@ -48,7 +48,6 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 
 ## 📸 Ekran Görüntüleri ve Arayüz Turu
 
-> **Not:** Görsellerin görüntülenmesi için repo dizininde `images` klasörü bulunmaktadır.
 
 ### 1. Sisteme Giriş (Login)
 Role-Based Access Control (RBAC) ile güvenli yetkilendirme ve kurumsal giriş ekranı.
