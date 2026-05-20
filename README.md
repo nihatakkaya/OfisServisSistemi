@@ -42,7 +42,7 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 * **Veritabanı:** Entity Framework Core (Code First), SQL Server
 * **Gerçek Zamanlı İletişim:** SignalR
 * **Frontend:** Saf (Vanilla) HTML5, CSS3, JavaScript (Harici CSS/JS kütüphanesi kullanılmamıştır)
-* **Tasarım Mimarisi:** CSS Değişkenleri (`--renk-ana-mavi` vb.) ile kurumsal tema yönetimi.
+* **Tasarım Mimarisi:** CSS Değişkenleri ile kurumsal tema yönetimi.
 
 ---
 
