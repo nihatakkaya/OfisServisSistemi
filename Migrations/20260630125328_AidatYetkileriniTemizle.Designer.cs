@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OfisServisSistemi.Data;
 
@@ -11,9 +12,11 @@ using OfisServisSistemi.Data;
 namespace OfisServisSistemi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630125328_AidatYetkileriniTemizle")]
+    partial class AidatYetkileriniTemizle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,45 +63,6 @@ namespace OfisServisSistemi.Migrations
                     b.HasIndex("KullaniciId");
 
                     b.ToTable("Aidatlar");
-                });
-
-            modelBuilder.Entity("OfisServisSistemi.Models.AidatGider", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Aciklama")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AyYil")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("KantinId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("KaydedenKullaniciAdi")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Miktar")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("SilindiMi")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("Tarih")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("KantinId");
-
-                    b.ToTable("AidatGiderleri");
                 });
 
             modelBuilder.Entity("OfisServisSistemi.Models.AidatSorumlusuYetki", b =>
@@ -426,17 +390,6 @@ namespace OfisServisSistemi.Migrations
                     b.Navigation("Kantin");
 
                     b.Navigation("Kullanici");
-                });
-
-            modelBuilder.Entity("OfisServisSistemi.Models.AidatGider", b =>
-                {
-                    b.HasOne("OfisServisSistemi.Models.Kantin", "Kantin")
-                        .WithMany()
-                        .HasForeignKey("KantinId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Kantin");
                 });
 
             modelBuilder.Entity("OfisServisSistemi.Models.AidatSorumlusuYetki", b =>

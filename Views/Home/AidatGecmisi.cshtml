@@ -1,0 +1,146 @@
+@model List<OfisServisSistemi.Models.Aidat>
+@{
+    ViewData["Title"] = "Aidat Geçmişi - SUBU OYS";
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .gecmis-konteyner {
+        max-width: 980px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header-bar {
+        background: #fff;
+        border: 1px solid #e1e5eb;
+        border-left: 6px solid var(--renk-yesil);
+        border-radius: 12px;
+        padding: 25px 34px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .baslik {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--renk-yesil);
+        margin: 0;
+    }
+
+    .baslik-alt {
+        color: var(--renk-gri);
+        font-weight: 600;
+        margin-top: 5px;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .btn-geri:hover {
+        background: var(--renk-ana-mavi);
+        border-color: var(--renk-ana-mavi);
+        color: #fff;
+    }
+
+    .custom-table {
+        width: 100%;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .custom-table th {
+        background: #f8f9fa;
+        padding: 15px;
+        color: var(--renk-ana-mavi);
+        font-weight: 800;
+        border-bottom: 2px solid #e1e5eb;
+    }
+
+    .custom-table td {
+        padding: 15px;
+        border-bottom: 1px solid #f1f3f5;
+        vertical-align: middle;
+        font-weight: 600;
+    }
+
+    .tutar {
+        color: var(--renk-yesil);
+        font-weight: 800;
+        font-size: 1.05rem;
+    }
+
+    .bos-durum {
+        background: #fff;
+        border: 1px solid #e1e5eb;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        color: var(--renk-gri);
+        font-weight: 700;
+    }
+</style>
+
+<div class="gecmis-konteyner">
+    <div class="header-bar">
+        <div>
+            <h1 class="baslik">Geçmiş Aidat Ödemelerim</h1>
+            <div class="baslik-alt">Sisteme işlenen aidat tahsilatlarınız</div>
+        </div>
+        <a href="/Home/Oda" class="btn-geri">← Oda Ekranına Dön</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="bos-durum">Henüz kayıtlı aidat ödemeniz bulunmuyor.</div>
+    }
+    else
+    {
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Kantin</th>
+                    <th>Dönem</th>
+                    <th>Ödeme Tarihi</th>
+                    <th>Açıklama</th>
+                    <th class="text-end">Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var odeme in Model)
+                {
+                    <tr>
+                        <td>@odeme.Kantin?.Ad</td>
+                        <td>@odeme.AyYil</td>
+                        <td>@odeme.OdemeTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@odeme.Aciklama</td>
+                        <td class="text-end tutar">@odeme.Miktar.ToString("N0") TL</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

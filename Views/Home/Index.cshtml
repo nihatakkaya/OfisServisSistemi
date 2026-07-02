@@ -638,6 +638,10 @@
             </div>
         </div>
         <div class="header-buttons">
+            @if (ViewBag.AidatYetkiliMi == true)
+            {
+                <a href="/Home/AidatTakip" class="btn-ozel" style="color:var(--renk-yesil); border-color:var(--renk-yesil); background:#e6f4ea;">Aidat Yönetimi</a>
+            }
             <a href="/Home/Gecmis" class="btn-ozel">📋 Geçmiş Siparişler</a>
             <a href="/Account/Logout" class="btn-ozel btn-cikis">⏻ Çıkış</a>
         </div>
@@ -648,7 +652,6 @@
 
     <div class="ana-pano">
 
-        <!-- 1. KOLON: ÇAY OCAĞI -->
         <div class="pano-kolon kolon-cay">
             <div class="kolon-baslik"><span>ÇAY OCAĞI SİPARİŞLERİ</span></div>
             <div class="havuz-alan">
@@ -679,7 +682,7 @@
                                         @talep.IslemTuru
                                     </div>
                                     <span class="miktar-badge">x@(talep.Miktar)</span>
-                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
+                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-durum="@talep.Durum" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
                                 </div>
                                 @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
                                 {
@@ -703,7 +706,6 @@
             </div>
         </div>
 
-        <!-- 2. KOLON: HİZMET TALEPLERİ -->
         <div class="pano-kolon kolon-hizmet">
             <div class="kolon-baslik"><span>HİZMET TALEPLERİ</span></div>
             <div class="havuz-alan">
@@ -723,7 +725,7 @@
                                 <div class="bilet-satir1">
                                     <span class="oda-etiketi">ODA @gercekOdaAdi</span>
                                     <div class="urun-adi"><span>@ikon</span> @talep.IslemTuru</div>
-                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
+                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-durum="@talep.Durum" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
                                 </div>
                                 @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
                                 {
@@ -747,7 +749,6 @@
             </div>
         </div>
 
-        <!-- 3. KOLON: STOK VE MENÜ YÖNETİMİ (AKORDEON ÖZELLİĞİ EKLENDİ) -->
         <div class="pano-kolon kolon-stok">
             <div class="kolon-baslik" style="cursor: pointer;" onclick="toggleStok()">
                 <span style="display:flex; align-items:center; gap:8px;">
@@ -853,7 +854,6 @@
     function stokGuncelle(id, degisim) { fetch(`/Home/UrunMiktarGuncelle?id=${id}&degisim=${degisim}`, { method: 'POST' }).then(res => { if(res.ok) location.reload(); }); }
     function urunSil(id) { if(!confirm("Bu ürünü menüden kaldırmak istediğinize emin misiniz?")) return; fetch(`/Home/UrunSil?id=${id}`, { method: 'POST' }).then(res => { if(res.ok) location.reload(); }); }
 
-    // AKORDEON (SEKME) AÇ/KAPA İŞLEVİ
     function toggleStok() {
         var kutu = document.getElementById("stokIcerikKutusu");
         var ok = document.getElementById("stokOkIcon");
@@ -867,7 +867,7 @@
     }
 
     function urunEkleModalAc(event) {
-        if(event) event.stopPropagation(); // Butona tıklanınca sekmenin açılıp kapanmasını engeller
+        if(event) event.stopPropagation();
         document.getElementById('urunEkleModal').style.display = 'flex';
     }
 
@@ -891,8 +891,16 @@
     function sureGuncelle() {
         document.querySelectorAll('.sure-sayaci').forEach(function(el) {
             var tarihStr = el.getAttribute('data-tarih');
+            var durum = el.getAttribute('data-durum');
             var satirId = el.getAttribute('data-satir-id');
             var satir = document.getElementById(satirId);
+
+            if (durum !== 'Bekliyor') {
+                el.innerText = "";
+                if (satir) satir.classList.remove('kritik');
+                return;
+            }
+
             var farkDk = Math.floor((new Date() - new Date(tarihStr)) / 60000);
 
             if (farkDk < 1) { el.innerText = "Yeni"; }

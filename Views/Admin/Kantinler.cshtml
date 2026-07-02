@@ -1,0 +1,240 @@
+﻿@model IEnumerable<OfisServisSistemi.Models.Kantin>
+@{
+    ViewData["Title"] = "Kantin ve Aidat Yönetimi";
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .ana-konteyner {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 25px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 6px solid var(--renk-ana-mavi);
+    }
+
+    .baslik {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        margin: 0;
+    }
+
+    .ekleme-karti {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+    }
+
+    .input-ozel {
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #dfe1e5;
+        width: 100%;
+        outline: none;
+    }
+
+    .btn-ekle {
+        background-color: var(--renk-yesil);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 6px;
+        font-weight: bold;
+        width: 100%;
+        transition: 0.2s;
+    }
+
+        .btn-ekle:hover {
+            background-color: #158c40;
+        }
+
+    .kantin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .kantin-kart {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+    }
+
+    .kantin-ikon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+
+    .kantin-ad {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .kantin-fiyat {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--renk-gri);
+        margin-bottom: 20px;
+    }
+
+    .btn-yonet {
+        background: var(--renk-ana-mavi);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: 0.2s;
+        cursor: pointer;
+        display: inline-block;
+    }
+
+        .btn-yonet:hover {
+            background: #002d75;
+            color: white;
+        }
+
+    /* Modal Stilleri */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+    .modal-kutu {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal-baslik {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #333;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div>
+            <h1 class="baslik">Kantin ve Aidat Yönetimi</h1>
+            <div style="color: var(--renk-gri); font-weight: 600; font-size: 0.9rem; margin-top: 5px;">Kurum İçi Ortak Çay Ocakları ve Kasalar</div>
+        </div>
+    </div>
+
+    <div class="ekleme-karti">
+        <form action="/Admin/KantinEkle" method="post" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="small fw-bold text-muted mb-1">Yeni Kantin / Çay Ocağı Adı</label>
+                <input type="text" name="ad" class="input-ozel" placeholder="Örn: Rektörlük Ortak Kantini" required />
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted mb-1">Aylık Sabit Tutar (TL)</label>
+                <input type="number" name="aylikSabitTutar" class="input-ozel" placeholder="Örn: 500" required min="0" />
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn-ekle">+ Kantin Oluştur</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="kantin-grid">
+        @foreach (var kantin in Model)
+        {
+            <div class="kantin-kart">
+                <div class="kantin-ikon">🏪</div>
+                <div class="kantin-ad">@kantin.Ad</div>
+                <div class="kantin-fiyat">Aylık Aidat: @kantin.AylikSabitTutar.ToString("N0") TL</div>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="/Admin/KantinDetay/@kantin.Id" class="btn-yonet flex-grow-1">Kişileri Yönet</a>
+
+                    <!-- YENİ: DÜZENLE BUTONU -->
+                    <button type="button" class="btn btn-outline-secondary" onclick="kantinDuzenleModalAc(@kantin.Id, '@kantin.Ad', @kantin.AylikSabitTutar)" style="border-radius: 6px; font-weight:bold;">Düzenle</button>
+
+                    <form action="/Admin/KantinSil" method="post" onsubmit="return confirm('Bu kantini silmek istediğinize emin misiniz?');">
+                        <input type="hidden" name="id" value="@kantin.Id" />
+                        <button type="submit" class="btn btn-outline-danger" style="border-radius: 6px; font-weight:bold;">Sil</button>
+                    </form>
+                </div>
+            </div>
+        }
+        @if (!Model.Any())
+        {
+            <div class="col-12 text-center text-muted py-5 fw-bold">Henüz hiç kantin oluşturulmamış.</div>
+        }
+    </div>
+</div>
+
+<!-- YENİ: DÜZENLEME MODALI -->
+<div class="modal-overlay" id="kantinDuzenleModal">
+    <div class="modal-kutu">
+        <div class="modal-baslik">✏️ Kantin Düzenle</div>
+        <form action="/Admin/KantinGuncelle" method="post">
+            <input type="hidden" name="id" id="editKantinId" />
+
+            <label class="small fw-bold text-muted mb-1">Kantin Adı</label>
+            <input type="text" name="ad" id="editKantinAd" class="input-ozel mb-3" required />
+
+            <label class="small fw-bold text-muted mb-1">Aylık Sabit Tutar (TL)</label>
+            <input type="number" name="aylikSabitTutar" id="editKantinTutar" class="input-ozel mb-4" required min="0" />
+
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-light border fw-bold" onclick="document.getElementById('kantinDuzenleModal').style.display='none'">İptal</button>
+                <button type="submit" class="btn btn-primary fw-bold" style="background:var(--renk-ana-mavi);">Değişiklikleri Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function kantinDuzenleModalAc(id, ad, tutar) {
+        document.getElementById('editKantinId').value = id;
+        document.getElementById('editKantinAd').value = ad;
+        document.getElementById('editKantinTutar').value = tutar;
+        document.getElementById('kantinDuzenleModal').style.display = 'flex';
+    }
+</script>

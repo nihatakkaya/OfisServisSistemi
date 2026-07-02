@@ -12,6 +12,7 @@
         --renk-gri: #6b6e75;
         --renk-beyaz: #ffffff;
         --renk-zemin: #f4f6f9;
+        --renk-acikmavi: #eef4ff;
     }
 
     body {
@@ -119,6 +120,46 @@
             background-color: #006d62;
         }
 
+    /* --- YENİ: ARAMA LİSTESİ TASARIMI --- */
+    .autocomplete-container {
+        position: relative;
+    }
+
+    .autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #dfe1e5;
+        border-radius: 6px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 5px;
+        padding: 0;
+        list-style: none;
+        display: none;
+    }
+
+        .autocomplete-list li {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f5;
+            color: #333;
+            font-weight: 600;
+        }
+
+            .autocomplete-list li:hover {
+                background: var(--renk-acikmavi);
+                color: var(--renk-ana-mavi);
+            }
+
+            .autocomplete-list li:last-child {
+                border-bottom: none;
+            }
+
     /* TABLO */
     .table-container {
         background: var(--renk-beyaz);
@@ -166,6 +207,11 @@
         color: #856404;
     }
 
+    .rol-aidat {
+        background: #e6f4ea;
+        color: var(--renk-yesil);
+    }
+
     .badge-oda {
         background: #e9ecef;
         color: #495057;
@@ -188,17 +234,26 @@
 
     @if (TempData["Hata"] != null)
     {
-        <div class="alert alert-danger">@TempData["Hata"]</div>
+        <div class="alert alert-danger" style="background:#fff5f5; color:#dc3545; border:1px solid #ffcdd2; padding:15px; border-radius:8px; font-weight:700; margin-bottom:20px;">
+            ⚠️ @TempData["Hata"]
+        </div>
+    }
+    @if (TempData["Basari"] != null)
+    {
+        <div class="alert alert-success" style="background:#e6f4ea; color:#1bac50; border:1px solid #b7e4c7; padding:15px; border-radius:8px; font-weight:700; margin-bottom:20px;">
+            ✅ @TempData["Basari"]
+        </div>
     }
 
     <div class="ekleme-karti">
-        <h5 class="form-baslik">➕ Yeni Kullanıcı Ekle (Oda veya Görevli)</h5>
+        <h5 class="form-baslik">➕ Yeni Kullanıcı / Yetki Ekle</h5>
         <form action="/Admin/KullaniciEkle" method="post" class="row g-3">
             <input type="hidden" name="katId" value="@Model.Id" />
 
-            <div class="col-md-4">
+            <div class="col-md-4 autocomplete-container">
                 <label class="small fw-bold text-muted mb-1">Kullanıcı Adı</label>
-                <input type="text" name="kullaniciAdi" class="input-ozel" required />
+                <input type="text" name="kullaniciAdi" id="kullaniciAdiInput" class="input-ozel" required autocomplete="off" placeholder="Aramak için yazın..." />
+                <ul id="kullaniciListesi" class="autocomplete-list"></ul>
             </div>
 
             <div class="col-md-3">
@@ -211,7 +266,7 @@
 
             <div class="col-md-3" id="ekleOdaNumarasiAlani">
                 <label class="small fw-bold text-muted mb-1">Oda Numarası</label>
-                <input type="text" name="odaNumarasi" class="input-ozel" />
+                <input type="text" name="odaNumarasi" class="input-ozel" placeholder="Örn: 101" />
             </div>
 
             <div class="col-md-2 d-flex align-items-end">
@@ -242,8 +297,11 @@
                             }
                             else
                             {
-
                                 <span class="badge-rol rol-gorevli">Kat Görevlisi</span>
+                            }
+                            @if (user.AidatYoneticisiMi)
+                            {
+                                <span class="badge-rol rol-aidat ms-1">Aidat Sorumlusu</span>
                             }
                         </td>
                         <td>
@@ -307,6 +365,49 @@
 </div>
 
 <script>
+    // --- YENİ EKLENEN: CANLI ARAMA SCRİPTİ ---
+    const input = document.getElementById('kullaniciAdiInput');
+    const list = document.getElementById('kullaniciListesi');
+
+    input.addEventListener('input', function() {
+        const q = this.value.trim();
+        if (q.length < 1) {
+            list.style.display = 'none';
+            return;
+        }
+
+        fetch('/Admin/KullaniciAra?q=' + encodeURIComponent(q))
+            .then(res => res.json())
+            .then(data => {
+                list.innerHTML = ''; // Eski listeyi temizle
+                if (data.length > 0) {
+                    data.forEach(ad => {
+                        const li = document.createElement('li');
+                        li.innerText = ad;
+                        li.onclick = function() {
+                            input.value = ad;
+                            list.style.display = 'none';
+                        };
+                        list.appendChild(li);
+                    });
+                    list.style.display = 'block';
+                } else {
+                    const li = document.createElement('li');
+                    li.innerText = 'Kayıt bulunamadı...';
+                    li.style.color = '#dc3545';
+                    li.style.pointerEvents = 'none'; // Tıklanmayı engelle
+                    list.appendChild(li);
+                    list.style.display = 'block';
+                }
+            });
+    });
+
+    // Dışarı tıklayınca listeyi gizle
+    document.addEventListener('click', function(e) {
+        if (e.target !== input) list.style.display = 'none';
+    });
+
+
     // Ekleme formunda rol değişince Oda Numarası kutusunu göster/gizle
     document.getElementById('ekleRolSelect').addEventListener('change', function() {
         var alan = document.getElementById('ekleOdaNumarasiAlani');
@@ -328,7 +429,6 @@
         document.getElementById('editUserRole').value = rol;
         document.getElementById('editUserOda').value = oda !== '' ? oda : '';
 
-        // Modal açıldığında da gizle/göster ayarını yap
         var alan = document.getElementById('editOdaNumarasiAlani');
         if(rol === 'Oda') { alan.style.display = 'block'; }
         else { alan.style.display = 'none'; }

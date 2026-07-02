@@ -1,0 +1,347 @@
+@using OfisServisSistemi.Models
+@{
+    ViewData["Title"] = "Aidat/Harcama Rapor";
+    var raporAidatlari = ViewBag.RaporAidatlari as List<Aidat> ?? new List<Aidat>();
+    var raporGiderleri = ViewBag.RaporGiderleri as List<AidatGider> ?? new List<AidatGider>();
+    var kantinSecenekleri = ViewBag.KantinSecenekleri as List<Kantin> ?? new List<Kantin>();
+    decimal raporToplananAidat = ViewBag.RaporToplananAidat ?? 0;
+    decimal raporToplamGider = ViewBag.RaporToplamGider ?? 0;
+    decimal raporKasaBakiyesi = ViewBag.RaporKasaBakiyesi ?? 0;
+    string raporAyYil = ViewBag.RaporAyYil as string ?? DateTime.Now.ToString("yyyy-MM");
+    string geriDonusUrl = ViewBag.GeriDonusUrl as string ?? "/Home/AidatTakip";
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .ana-konteyner {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 25px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        border-left: 6px solid var(--renk-ana-mavi);
+        margin-bottom: 25px;
+    }
+
+    .baslik {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--renk-ana-mavi);
+        margin: 0;
+    }
+
+    .alt-baslik {
+        color: var(--renk-gri);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.2s;
+        white-space: nowrap;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    .filtre-karti {
+        background: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        border: 1px solid #e1e5eb;
+    }
+
+    .rapor-form {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: end;
+    }
+
+    .form-alan {
+        min-width: 210px;
+    }
+
+    .btn-rapor {
+        background: var(--renk-ana-mavi);
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-weight: 900;
+    }
+
+        .btn-rapor:hover {
+            background: #002e76;
+        }
+
+    .btn-excel {
+        background: var(--renk-yesil);
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-weight: 900;
+    }
+
+        .btn-excel:hover {
+            background: #168d42;
+        }
+
+    .mali-ozet {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .ozet-karti {
+        background: #fff;
+        border: 1px solid #e1e5eb;
+        border-radius: 10px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .ozet-etiket {
+        color: var(--renk-gri);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .ozet-tutar {
+        font-size: 1.55rem;
+        font-weight: 900;
+        color: #2c3e50;
+    }
+
+        .ozet-tutar.gelir {
+            color: var(--renk-yesil);
+        }
+
+        .ozet-tutar.gider {
+            color: #dc3545;
+        }
+
+        .ozet-tutar.arti {
+            color: #0c5460;
+        }
+
+        .ozet-tutar.eksi {
+            color: #b58900;
+        }
+
+    .rapor-bolumu {
+        background: #fff;
+        border: 1px solid #e1e5eb;
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .bolum-baslik {
+        color: var(--renk-ana-mavi);
+        font-size: 1.05rem;
+        font-weight: 900;
+        margin: 0 0 16px;
+    }
+
+    .custom-table {
+        width: 100%;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+        .custom-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            color: var(--renk-ana-mavi);
+            font-weight: bold;
+            border-bottom: 2px solid #e1e5eb;
+        }
+
+        .custom-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: middle;
+        }
+
+    @@media (max-width: 768px) {
+        .header-bar {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 22px;
+        }
+
+        .btn-geri,
+        .btn-rapor,
+        .btn-excel,
+        .form-alan {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div>
+            <h1 class="baslik">Aidat/Harcama Rapor</h1>
+            <div class="alt-baslik">@ViewBag.KantinAdi - @raporAyYil dönemi detaylı gelir ve gider dökümü</div>
+        </div>
+        <a href="@geriDonusUrl" class="btn-geri">Geri Dön</a>
+    </div>
+
+    <div class="filtre-karti">
+        <form method="get" action="/Home/AidatHarcamaRapor" class="rapor-form">
+            @if (kantinSecenekleri.Count > 1)
+            {
+                <div class="form-alan">
+                    <label class="small fw-bold text-muted mb-1">Kantin</label>
+                    <select name="kantinId" class="form-control fw-bold">
+                        @foreach (var kantin in kantinSecenekleri)
+                        {
+                            if (kantin.Id == ViewBag.KantinId)
+                            {
+                                <option value="@kantin.Id" selected>@kantin.Ad</option>
+                            }
+                            else
+                            {
+                                <option value="@kantin.Id">@kantin.Ad</option>
+                            }
+                        }
+                    </select>
+                </div>
+            }
+            else
+            {
+                <input type="hidden" name="kantinId" value="@ViewBag.KantinId" />
+            }
+
+            <div class="form-alan">
+                <label class="small fw-bold text-muted mb-1">Rapor Ayı</label>
+                <input type="month" name="ayYil" class="form-control fw-bold" value="@raporAyYil" required />
+            </div>
+
+            <button type="submit" class="btn-rapor">Raporu Göster</button>
+            <button type="submit" class="btn-excel" formaction="/Home/AidatHarcamaExcelAktar">Excel İndir</button>
+        </form>
+    </div>
+
+    <div class="mali-ozet">
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Rapor Dönemi</div>
+            <div class="ozet-tutar">@raporAyYil</div>
+        </div>
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Toplanan Aidat</div>
+            <div class="ozet-tutar gelir">@raporToplananAidat.ToString("N0") TL</div>
+        </div>
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Yapılan Harcama</div>
+            <div class="ozet-tutar gider">@raporToplamGider.ToString("N0") TL</div>
+        </div>
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Kalan Para</div>
+            <div class="ozet-tutar @(raporKasaBakiyesi >= 0 ? "arti" : "eksi")">
+                @(raporKasaBakiyesi >= 0 ? "+" : "-")@Math.Abs(raporKasaBakiyesi).ToString("N0") TL
+            </div>
+        </div>
+    </div>
+
+    <div class="rapor-bolumu">
+        <h2 class="bolum-baslik">Toplanan Aidat Detayı</h2>
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Kullanıcı / Oda</th>
+                    <th>Açıklama</th>
+                    <th>Tarih</th>
+                    <th class="text-end">Ödenen Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var odeme in raporAidatlari)
+                {
+                    <tr>
+                        <td class="fw-bold">@odeme.Kullanici.KullaniciAdi</td>
+                        <td>@odeme.Aciklama</td>
+                        <td>@odeme.OdemeTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td class="text-end fw-bold text-success">@odeme.Miktar.ToString("N0") TL</td>
+                    </tr>
+                }
+                @if (!raporAidatlari.Any())
+                {
+                    <tr><td colspan="4" class="text-center py-4 text-muted fw-bold">Bu ay için aidat tahsilatı bulunmuyor.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="rapor-bolumu">
+        <h2 class="bolum-baslik">Yapılan Harcamalar</h2>
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Harcama Açıklaması</th>
+                    <th>Kaydeden</th>
+                    <th>Tarih</th>
+                    <th class="text-end">Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var gider in raporGiderleri)
+                {
+                    <tr>
+                        <td class="fw-bold">@gider.Aciklama</td>
+                        <td>@gider.KaydedenKullaniciAdi</td>
+                        <td>@gider.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td class="text-end fw-bold text-danger">@gider.Miktar.ToString("N0") TL</td>
+                    </tr>
+                }
+                @if (!raporGiderleri.Any())
+                {
+                    <tr><td colspan="4" class="text-center py-4 text-muted fw-bold">Bu ay için harcama kaydı bulunmuyor.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

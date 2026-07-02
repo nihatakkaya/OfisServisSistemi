@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfisServisSistemi.Data;
 using OfisServisSistemi.Hubs;
@@ -6,11 +7,15 @@ using OfisServisSistemi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Veritabaný Baðlantýsý
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+// 1. VeritabanÄ± BaÄŸlantÄ±sÄ±
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Giriþ (Cookie) Ayarlarý
+// 2. GiriÅŸ (Cookie) AyarlarÄ±
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -20,7 +25,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // 3. Servisler
-builder.Services.AddControllersWithViews();
+builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 builder.Services.AddSignalR();
 
 var app = builder.Build();
@@ -43,14 +52,14 @@ app.MapControllerRoute(
 
 app.MapHub<OfisHub>("/ofisHub");
 
-// --- OTOMATÝK VERÝ YÜKLEME (SEED DATA) ---
+// --- OTOMATÄ°K VERÄ° YÃœKLEME (SEED DATA) ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    // Veritabaný yoksa oluþtur
+    // VeritabanÄ± yoksa oluÅŸtur
     db.Database.EnsureCreated();
 
-    // Eðer hiç kullanýcý yoksa sistemi kur
+    // EÄŸer hiÃ§ kullanÄ±cÄ± yoksa sistemi kur
     if (!db.Kullanicilar.Any())
     {
         // 1. Super Admin (Sistemin Sahibi)
@@ -61,60 +70,82 @@ using (var scope = app.Services.CreateScope())
             Rol = "SuperAdmin"
         });
 
-        // 2. Örnek Bina: T1 Binasý
-        var bina = new Bina { Ad = "T1 Binasý" };
+        // 2. Ã–rnek Bina: T1 BinasÄ±
+        var bina = new Bina { Ad = "T1 BinasÄ±" };
         db.Binalar.Add(bina);
-        db.SaveChanges(); // ID oluþsun diye kaydet
+        db.SaveChanges(); // ID oluÅŸsun diye kaydet
 
-        // 3. Örnek Kat: 3. Kat (300'lüler)
+        // 3. Ã–rnek Kat: 3. Kat (300'lÃ¼ler)
         var kat = new Kat { Ad = "3. Kat", BinaId = bina.Id };
         db.Katlar.Add(kat);
         db.SaveChanges();
 
-        // 4. Bu Katýn Çaycýsý (Kat Görevlisi)
-        db.Kullanicilar.Add(new Kullanici
+        // 4. Bu KatÄ±n Ã‡aycÄ±sÄ± (Kat GÃ¶revlisi)
+        var cayci3 = new Kullanici
         {
             KullaniciAdi = "cayci3",
             Sifre = "1234",
             Rol = "KatGorevlisi",
             KatId = kat.Id
-        });
+        };
+        db.Kullanicilar.Add(cayci3);
+        db.SaveChanges();
+        db.KullaniciOdalari.Add(new KullaniciOda { KullaniciId = cayci3.Id, KatId = kat.Id });
 
         // 5. Bu Kattaki Odalar (301, 302, 303)
         for (int i = 301; i <= 305; i++)
         {
-            db.Kullanicilar.Add(new Kullanici
+            var odaKullanici = new Kullanici
             {
                 KullaniciAdi = i.ToString(),
                 Sifre = i.ToString(),
                 Rol = "Oda",
                 KatId = kat.Id
+            };
+            db.Kullanicilar.Add(odaKullanici);
+            db.SaveChanges();
+            db.KullaniciOdalari.Add(new KullaniciOda
+            {
+                KullaniciId = odaKullanici.Id,
+                KatId = kat.Id,
+                OdaNumarasi = i.ToString()
             });
         }
 
-        // 6. Örnek Kat: 2. Kat (200'lüler - Göstermelik)
+        // 6. Ã–rnek Kat: 2. Kat (200'lÃ¼ler - GÃ¶stermelik)
         var kat2 = new Kat { Ad = "2. Kat", BinaId = bina.Id };
         db.Katlar.Add(kat2);
         db.SaveChanges();
 
-        // 2. Katýn Çaycýsý
-        db.Kullanicilar.Add(new Kullanici
+        // 2. KatÄ±n Ã‡aycÄ±sÄ±
+        var cayci2 = new Kullanici
         {
             KullaniciAdi = "cayci2",
             Sifre = "1234",
             Rol = "KatGorevlisi",
             KatId = kat2.Id
-        });
+        };
+        db.Kullanicilar.Add(cayci2);
+        db.SaveChanges();
+        db.KullaniciOdalari.Add(new KullaniciOda { KullaniciId = cayci2.Id, KatId = kat2.Id });
 
         // 2. Kattaki Odalar (201, 202)
         for (int i = 201; i <= 203; i++)
         {
-            db.Kullanicilar.Add(new Kullanici
+            var odaKullanici = new Kullanici
             {
                 KullaniciAdi = i.ToString(),
                 Sifre = i.ToString(),
                 Rol = "Oda",
                 KatId = kat2.Id
+            };
+            db.Kullanicilar.Add(odaKullanici);
+            db.SaveChanges();
+            db.KullaniciOdalari.Add(new KullaniciOda
+            {
+                KullaniciId = odaKullanici.Id,
+                KatId = kat2.Id,
+                OdaNumarasi = i.ToString()
             });
         }
 

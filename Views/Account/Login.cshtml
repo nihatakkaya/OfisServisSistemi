@@ -160,6 +160,7 @@
             }
 
             <form action="/Account/Login" method="post">
+                @Html.AntiForgeryToken()
                 <div class="mb-3">
                     <label class="form-label">Kullanıcı Adı</label>
                     <input type="text" name="username" class="form-control" placeholder="Kullanıcı Adı" required />

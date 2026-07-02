@@ -1,0 +1,462 @@
+﻿@model IEnumerable<OfisServisSistemi.Models.KantinKullanici>
+@{
+    ViewData["Title"] = "Aidat Takip Sistemi";
+    var odenenAidatlar = ViewBag.OdenenAidatlar as List<OfisServisSistemi.Models.Aidat> ?? new List<OfisServisSistemi.Models.Aidat>();
+    var aidatGiderleri = ViewBag.AidatGiderleri as List<OfisServisSistemi.Models.AidatGider> ?? new List<OfisServisSistemi.Models.AidatGider>();
+    decimal aylikTutar = ViewBag.KantinAylikTutar;
+    decimal toplananAidat = ViewBag.ToplananAidat ?? 0;
+    decimal toplamGider = ViewBag.ToplamGider ?? 0;
+    decimal kasaBakiyesi = ViewBag.KasaBakiyesi ?? 0;
+    var kantinSecenekleri = ViewBag.KantinSecenekleri as List<OfisServisSistemi.Models.Kantin> ?? new List<OfisServisSistemi.Models.Kantin>();
+    string geriDonusUrl = ViewBag.GeriDonusUrl as string ?? "/Home/Oda";
+}
+
+<style>
+    :root {
+        --renk-ana-mavi: #003fa1;
+        --renk-yesil: #1bac50;
+        --renk-gri: #6b6e75;
+        --renk-beyaz: #ffffff;
+        --renk-zemin: #f4f6f9;
+        --renk-sari: #f39c12;
+    }
+
+    body {
+        background-color: var(--renk-zemin);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .ana-konteyner {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header-bar {
+        background: var(--renk-beyaz);
+        border-radius: 12px;
+        padding: 25px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 30px;
+        border-left: 6px solid var(--renk-yesil);
+    }
+
+    .baslik {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--renk-yesil);
+        margin: 0;
+    }
+
+    .btn-geri {
+        background: #f8f9fa;
+        border: 1px solid #dfe1e5;
+        color: var(--renk-gri);
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .btn-geri:hover {
+            background: var(--renk-ana-mavi);
+            color: white;
+            border-color: var(--renk-ana-mavi);
+        }
+
+    .filtre-karti {
+        background: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        border: 1px solid #e1e5eb;
+    }
+
+    .mali-ozet {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .ozet-karti {
+        background: #fff;
+        border: 1px solid #e1e5eb;
+        border-radius: 10px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .ozet-etiket {
+        color: var(--renk-gri);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .ozet-tutar {
+        font-size: 1.55rem;
+        font-weight: 900;
+        color: #2c3e50;
+    }
+
+        .ozet-tutar.gelir {
+            color: var(--renk-yesil);
+        }
+
+        .ozet-tutar.gider {
+            color: #dc3545;
+        }
+
+        .ozet-tutar.arti {
+            color: #0c5460;
+        }
+
+        .ozet-tutar.eksi {
+            color: #b58900;
+        }
+
+    .gider-karti {
+        background: #fff;
+        border: 1px solid #e1e5eb;
+        border-left: 6px solid var(--renk-ana-mavi);
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .rapor-toggle {
+        background: var(--renk-ana-mavi);
+        color: #fff;
+        border: none;
+        padding: 11px 18px;
+        border-radius: 6px;
+        font-weight: 900;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .rapor-toggle:hover {
+            color: #fff;
+            background: #002e76;
+        }
+
+    .gider-baslik {
+        font-weight: 900;
+        color: var(--renk-ana-mavi);
+        margin-bottom: 16px;
+    }
+
+    .custom-table {
+        width: 100%;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+        .custom-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            color: var(--renk-ana-mavi);
+            font-weight: bold;
+            border-bottom: 2px solid #e1e5eb;
+        }
+
+        .custom-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: middle;
+        }
+
+    .odeme-formu {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .input-tutar {
+        width: 110px;
+        padding: 6px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        outline: none;
+        font-weight: bold;
+    }
+
+    .btn-ode {
+        background: var(--renk-yesil);
+        color: white;
+        border: none;
+        padding: 6px 15px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .btn-ode:hover {
+            background: #169c46;
+        }
+
+    .badge-odendi {
+        background: #e6f4ea;
+        color: #1bac50;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #b7e4c7;
+    }
+
+    .badge-eksik {
+        background: #fff8e1;
+        color: #b58900;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #ffe082;
+    }
+
+    /* YENİ: FAZLA ÖDEME STİLİ */
+    .badge-fazla {
+        background: #d1ecf1;
+        color: #0c5460;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #bee5eb;
+    }
+
+    .btn-gider {
+        background: var(--renk-ana-mavi);
+        color: #fff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: 800;
+    }
+
+        .btn-gider:hover {
+            background: #002e76;
+        }
+</style>
+
+<div class="ana-konteyner">
+    <div class="header-bar">
+        <div>
+            <h1 class="baslik">@ViewBag.KantinAdi - Aidat Havuzu</h1>
+            <div style="color: var(--renk-gri); font-weight: 600; font-size: 0.9rem; margin-top: 5px;">Aylık Kantin Aidatı Tahsilat ve Takip Paneli (Hedef Tutar: @aylikTutar.ToString("N0") TL)</div>
+        </div>
+        <a href="@geriDonusUrl" class="btn-geri">← Geri Dön</a>
+    </div>
+
+    @if (TempData["Basari"] != null)
+    {
+        <div class="alert alert-success fw-bold">✅ @TempData["Basari"]</div>
+    }
+    @if (TempData["Hata"] != null)
+    {
+        <div class="alert alert-danger fw-bold">⚠️ @TempData["Hata"]</div>
+    }
+
+    <div class="filtre-karti">
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+            <div style="font-weight: bold; color: var(--renk-ana-mavi); font-size: 1.1rem;">📅 Filtre:</div>
+            <form method="get" action="/Home/AidatTakip" style="display:flex; gap:10px; flex-wrap:wrap;">
+                @if (kantinSecenekleri.Count > 1)
+                {
+                    <select name="kantinId" class="form-control fw-bold" style="width: 260px;" onchange="this.form.submit()">
+                        @foreach (var kantin in kantinSecenekleri)
+                        {
+                            if (kantin.Id == ViewBag.KantinId)
+                            {
+                                <option value="@kantin.Id" selected>@kantin.Ad</option>
+                            }
+                            else
+                            {
+                                <option value="@kantin.Id">@kantin.Ad</option>
+                            }
+                        }
+                    </select>
+                }
+                <input type="month" name="ayYil" class="form-control fw-bold" value="@ViewBag.SecilenAyYil" style="width: 200px;" onchange="this.form.submit()" />
+            </form>
+        </div>
+        <a class="rapor-toggle" href="@Url.Action("AidatHarcamaRapor", "Home", new { kantinId = ViewBag.KantinId, ayYil = ViewBag.SecilenAyYil })">Aidat/Harcama Rapor</a>
+    </div>
+
+    <div class="mali-ozet">
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Toplanan Aidat</div>
+            <div class="ozet-tutar gelir">@toplananAidat.ToString("N0") TL</div>
+        </div>
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Yapılan Harcama</div>
+            <div class="ozet-tutar gider">@toplamGider.ToString("N0") TL</div>
+        </div>
+        <div class="ozet-karti">
+            <div class="ozet-etiket">Aylık Kalan Bakiye</div>
+            <div class="ozet-tutar @(kasaBakiyesi >= 0 ? "arti" : "eksi")">
+                @(kasaBakiyesi >= 0 ? "+" : "-")@Math.Abs(kasaBakiyesi).ToString("N0") TL
+            </div>
+        </div>
+    </div>
+
+    <div class="gider-karti">
+        <h5 class="gider-baslik">Harcama / Gider Tablosu</h5>
+        <form action="/Home/AidatGiderEkle" method="post" class="row g-3 align-items-end mb-4">
+            <input type="hidden" name="kantinId" value="@ViewBag.KantinId" />
+            <input type="hidden" name="ayYil" value="@ViewBag.SecilenAyYil" />
+            <div class="col-md-5">
+                <label class="small fw-bold text-muted mb-1">Harcama Açıklaması</label>
+                <input type="text" name="aciklama" class="form-control fw-bold" placeholder="Örn: çay, şeker, bardak" required />
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted mb-1">Tutar</label>
+                <input type="number" name="miktar" class="form-control fw-bold" min="1" step="0.01" placeholder="0" required />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn-gider w-100">Gider Ekle</button>
+            </div>
+        </form>
+
+        <table class="custom-table" style="box-shadow:none;">
+            <thead>
+                <tr>
+                    <th>Açıklama</th>
+                    <th>Kaydeden</th>
+                    <th>Tarih</th>
+                    <th class="text-end">Tutar</th>
+                    <th class="text-end">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var gider in aidatGiderleri)
+                {
+                    <tr>
+                        <td class="fw-bold">@gider.Aciklama</td>
+                        <td>@gider.KaydedenKullaniciAdi</td>
+                        <td>@gider.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td class="text-end fw-bold text-danger">@gider.Miktar.ToString("N0") TL</td>
+                        <td class="text-end">
+                            <form action="/Home/AidatGiderSil" method="post" onsubmit="return confirm('Bu gider kaydını silmek istediğinize emin misiniz?');">
+                                <input type="hidden" name="id" value="@gider.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">Sil</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                @if (!aidatGiderleri.Any())
+                {
+                    <tr><td colspan="5" class="text-center py-4 text-muted fw-bold">Bu ay için henüz gider kaydı yok.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Personel / Oda Adı</th>
+                <th class="text-center">Ödeme Durumu (Parçalı Döküm)</th>
+                <th class="text-end">İşlem (Kalan Tahsilat)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var uye in Model)
+            {
+                var kisininOdemeleri = odenenAidatlar.Where(a => a.KullaniciId == uye.KullaniciId).ToList();
+                decimal toplamOdenen = kisininOdemeleri.Sum(a => a.Miktar);
+
+                // YENİ: Kalan tutar eksi çıkarsa bu adam fazladan para vermiş demektir.
+                decimal kalanTutar = aylikTutar - toplamOdenen;
+
+                <tr>
+                    <td style="font-size: 1.1rem; font-weight: bold; color:#333;">@uye.Kullanici.KullaniciAdi</td>
+
+                    <td class="text-center">
+                        @if (toplamOdenen > 0)
+                        {
+                            <div style="display:flex; flex-direction:column; gap:5px; align-items:center;">
+                                @foreach (var odeme in kisininOdemeleri)
+                                {
+                                    <div class="badge-odendi" style="font-size:0.85rem;">
+                                        ✅ @odeme.Miktar.ToString("N0") TL
+                                        <form action="/Home/AidatSil" method="post" onsubmit="return confirm('Bu parçalı ödemeyi iptal etmek istediğinize emin misiniz?');" style="margin:0; padding:0;">
+                                            <input type="hidden" name="id" value="@odeme.Id" />
+                                            <input type="hidden" name="ayYil" value="@ViewBag.SecilenAyYil" />
+                                            <button type="submit" class="btn btn-link p-0 ms-2 text-danger" style="text-decoration:none; font-weight:bold;">✖</button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted fw-bold" style="font-size: 0.95rem;">⏳ Hiç Ödeme Yok</span>
+                        }
+                    </td>
+
+                    <td class="text-end">
+                        @if (kalanTutar < 0)
+                        {
+                            <!-- FAZLA ÖDEME DURUMU -->
+                            <span class="badge-fazla" style="font-size:0.9rem; padding:8px 12px;">
+                                📈 Fazla Bakiye: +@(Math.Abs(kalanTutar).ToString("N0")) TL
+                            </span>
+                        }
+                        else if (kalanTutar > 0 || aylikTutar == 0)
+                        {
+                            <form action="/Home/AidatOde" method="post" class="odeme-formu">
+                                <input type="hidden" name="kantinId" value="@ViewBag.KantinId" />
+                                <input type="hidden" name="kullaniciId" value="@uye.KullaniciId" />
+                                <input type="hidden" name="ayYil" value="@ViewBag.SecilenAyYil" />
+
+                                @if (kalanTutar > 0 && toplamOdenen > 0)
+                                {
+                                    <span class="badge-eksik me-2">Eksik (Kalan: @kalanTutar.ToString("N0") TL)</span>
+                                }
+
+                                <input type="number" name="miktar" class="input-tutar" placeholder="Tutar" value="@(kalanTutar > 0 ? kalanTutar : "")" required min="1" />
+                                <button type="submit" class="btn-ode">Tahsil Et</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success" style="font-size:0.9rem; padding:8px 12px; color:white; border-radius: 6px;">✅ Tüm Borç Kapatıldı</span>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="3" class="text-center py-5 text-muted fw-bold">Bu kapsamda takip edilecek personel bulunmuyor.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

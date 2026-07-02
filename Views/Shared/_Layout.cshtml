@@ -25,7 +25,7 @@
         .navbar {
             background-color: white !important;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border-bottom: 3px solid var(--renk-yesil); 
+            border-bottom: 3px solid var(--renk-yesil);
         }
 
         .navbar-brand {
@@ -35,6 +35,16 @@
             align-items: center;
             gap: 10px;
         }
+
+        .nav-link {
+            font-weight: 600;
+            color: #555 !important;
+            transition: color 0.2s;
+        }
+
+            .nav-link:hover {
+                color: var(--renk-yesil) !important;
+            }
 
         .footer {
             position: fixed;
@@ -50,6 +60,10 @@
     </style>
 </head>
 <body>
+    <div id="anti-forgery-token-holder" style="display:none;">
+        @Html.AntiForgeryToken()
+    </div>
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm mb-3">
             <div class="container-fluid">
@@ -58,6 +72,23 @@
                     Ofis Yönetim Sistemi
                 </a>
 
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Admin/Index">Bina & Kat Yönetimi</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Admin/Kantinler">Kantin Yönetimi</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
             </div>
         </nav>
     </header>
@@ -78,6 +109,45 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
     <script>
+        (function () {
+            function antiForgeryToken() {
+                var tokenInput = document.querySelector('#anti-forgery-token-holder input[name="__RequestVerificationToken"]');
+                return tokenInput ? tokenInput.value : '';
+            }
+
+            document.addEventListener('submit', function (event) {
+                var form = event.target;
+                if (!form || form.tagName !== 'FORM' || (form.method || '').toLowerCase() !== 'post') return;
+                if (form.querySelector('input[name="__RequestVerificationToken"]')) return;
+
+                var token = antiForgeryToken();
+                if (!token) return;
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = '__RequestVerificationToken';
+                input.value = token;
+                form.appendChild(input);
+            }, true);
+
+            var originalFetch = window.fetch;
+            window.fetch = function (input, init) {
+                var options = init || {};
+                if (options.method && options.method.toUpperCase() === 'POST') {
+                    var token = antiForgeryToken();
+                    if (token) {
+                        var headers = new Headers(options.headers || {});
+                        if (!headers.has('RequestVerificationToken')) {
+                            headers.set('RequestVerificationToken', token);
+                        }
+                        options = Object.assign({}, options, { headers: headers });
+                    }
+                }
+
+                return originalFetch(input, options);
+            };
+        })();
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('/sw.js').then(function (registration) {

@@ -123,6 +123,8 @@
     .header-buttons {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .btn-ozel {
@@ -575,7 +577,35 @@
     }
 
         .btn-iptal-ufak:hover {
+            background: none;
             color: var(--renk-uyari);
+        }
+
+    .cuzdan-karti {
+        background: #ffffff;
+        border: 2px solid #e1e5eb;
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 10px; /* Alttaki butona yer açmak için margin küçültüldü */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+        .cuzdan-karti.tamamlandi {
+            border-color: #1bac50;
+            background: #f4fdf7;
+        }
+
+        .cuzdan-karti.eksik {
+            border-color: #f39c12;
+            background: #fffcf5;
+        }
+
+        .cuzdan-karti.fazla {
+            border-color: #17a2b8;
+            background: #f0f9fa;
         }
 </style>
 
@@ -609,6 +639,14 @@
             </div>
         </div>
         <div class="header-buttons">
+            @if (ViewBag.AidatYetkiliMi == true)
+            {
+                <a href="/Home/AidatTakip" class="btn-ozel" style="color:var(--renk-yesil); border-color:var(--renk-yesil); background:#e6f4ea;">Aidat Yönetimi</a>
+            }
+            @if (ViewBag.CuzdanKantinAdi != null)
+            {
+                <a href="/Home/AidatGecmisi" class="btn-ozel">Geçmiş Ödemeleri Gör</a>
+            }
             <a href="/Home/Gecmis" class="btn-ozel">📋 Geçmiş Siparişler</a>
             <a href="/Account/Logout" class="btn-ozel btn-cikis">⏻ Çıkış</a>
         </div>
@@ -689,6 +727,48 @@
         </div>
 
         <div class="sag-kolon">
+
+            @if (ViewBag.CuzdanKantinAdi != null && ViewBag.CuzdanAylikSabit > 0)
+            {
+                decimal kalan = ViewBag.CuzdanKalanBorc;
+                decimal toplam = ViewBag.CuzdanAylikSabit;
+
+                string cuzdanClass = kalan == 0 ? "tamamlandi" : (kalan < 0 ? "fazla" : (kalan < toplam ? "eksik" : ""));
+
+                <div class="cuzdan-karti @cuzdanClass">
+                    <div>
+                        <div style="font-weight:bold; color:var(--renk-gri); font-size:0.8rem; text-transform:uppercase;">@ViewBag.CuzdanAy Aidatı</div>
+                        <div style="font-weight:800; color:#333; font-size:1.1rem; margin-top:2px;">@ViewBag.CuzdanKantinAdi</div>
+                    </div>
+
+                    @if (kalan < 0)
+                    {
+                        <div style="background:#d1ecf1; color:#0c5460; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem; border:1px solid #bee5eb; text-align:right;">
+                            <div style="font-size:0.8rem; opacity:0.8;">Fazla Bakiye (Alacak)</div>
+                            <div>+@(Math.Abs(kalan).ToString("N0")) TL</div>
+                        </div>
+                    }
+                    else if (kalan == 0)
+                    {
+                        <div style="background:#1bac50; color:white; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;">
+                            ✓ Ödendi
+                        </div>
+                    }
+                    else if (kalan < toplam)
+                    {
+                        <div style="text-align:right;">
+                            <div style="color:#f39c12; font-weight:bold; font-size:0.9rem;">Kısmi Ödeme</div>
+                            <div style="color:#e67e22; font-weight:800; font-size:0.8rem;">Kalan: @kalan.ToString("N0") TL</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="background:#f8f9fa; color:#e74c3c; border:1px solid #f5c6cb; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:0.9rem;">
+                            Ödenmedi (@toplam.ToString("N0") TL)
+                        </div>
+                    }
+                </div>
+            }
 
             <div class="kutu-kapsayici" style="border-top: 5px solid var(--renk-teal);">
                 <div class="bolum-basligi" style="border:none; margin-bottom: 10px;">🛒 Sepetiniz</div>

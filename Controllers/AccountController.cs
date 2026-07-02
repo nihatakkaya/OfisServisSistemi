@@ -30,9 +30,13 @@ namespace OfisServisSistemi.Controllers
             _configuration = configuration;
         }
 
-        public async Task<IActionResult> Login()
+        public IActionResult Login()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return KullaniciAnaSayfasinaYonlendir();
+            }
+
             return View();
         }
 
@@ -66,36 +70,38 @@ namespace OfisServisSistemi.Controllers
             bool sifreDogruMu = false;
             string adSoyad = username;
 
-            using var client = new HttpClient();
-            var loginData = new { username = username, password = password };
-            var jsonContent = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
-
-            try
+            if (localUser.Sifre == password && localUser.Sifre != "API_LOGIN")
             {
-                var response = await client.PostAsync("https://apilogin.subu.edu.tr/api/Login", jsonContent);
-
-                if (response.IsSuccessStatusCode)
+                sifreDogruMu = true;
+            }
+            else
+            {
+                using var client = new HttpClient
                 {
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    var apiUser = JsonSerializer.Deserialize<ApiLoginResponse>(responseString, options);
+                    Timeout = TimeSpan.FromSeconds(8)
+                };
+                var loginData = new { username = username, password = password };
+                var jsonContent = new StringContent(JsonSerializer.Serialize(loginData), Encoding.UTF8, "application/json");
 
-                    if (apiUser != null && apiUser.IsAktif)
+                try
+                {
+                    var response = await client.PostAsync("https://apilogin.subu.edu.tr/api/Login", jsonContent);
+
+                    if (response.IsSuccessStatusCode)
                     {
-                        sifreDogruMu = true;
-                        adSoyad = $"{apiUser.Ad} {apiUser.Soyad}";
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                        var apiUser = JsonSerializer.Deserialize<ApiLoginResponse>(responseString, options);
+
+                        if (apiUser != null && apiUser.IsAktif)
+                        {
+                            sifreDogruMu = true;
+                            adSoyad = $"{apiUser.Ad} {apiUser.Soyad}";
+                        }
                     }
                 }
-            }
-            catch (Exception)
-            {
-            }
-
-            if (!sifreDogruMu)
-            {
-                if (localUser.Sifre == password && localUser.Sifre != "API_LOGIN")
+                catch (Exception)
                 {
-                    sifreDogruMu = true;
                 }
             }
 
@@ -108,9 +114,21 @@ namespace OfisServisSistemi.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, localUser.KullaniciAdi),
-                new Claim("AdSoyad", adSoyad),
-                new Claim(ClaimTypes.Role, localUser.Rol)
+                new Claim("AdSoyad", adSoyad)
             };
+
+            if (!string.IsNullOrWhiteSpace(localUser.Rol) && localUser.Rol != "AidatSorumlusu")
+            {
+                claims.Add(new Claim(ClaimTypes.Role, localUser.Rol));
+            }
+
+            bool aktifAidatYetkisiVar = await _context.AidatSorumlusuYetkileri
+                .AnyAsync(y => y.KullaniciId == localUser.Id && !y.SilindiMi && !y.Kantin.SilindiMi);
+
+            if (aktifAidatYetkisiVar)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "AidatSorumlusu"));
+            }
 
             var baglantilar = await _context.KullaniciOdalari.Include(ko => ko.Kat).Where(ko => ko.KullaniciId == localUser.Id && !ko.SilindiMi).ToListAsync();
             foreach (var baglanti in baglantilar)
@@ -131,14 +149,31 @@ namespace OfisServisSistemi.Controllers
 
             if (localUser.Rol == "SuperAdmin") return RedirectToAction("Index", "Admin");
             if (localUser.Rol == "KatGorevlisi") return RedirectToAction("Index", "Home");
+            if (baglantilar.Any(b => !string.IsNullOrEmpty(b.OdaNumarasi))) return RedirectToAction("Oda", "Home");
+            if (aktifAidatYetkisiVar) return RedirectToAction("AidatTakip", "Home");
 
-            return RedirectToAction("Oda", "Home");
+            return RedirectToAction("Login", "Account");
+        }
+
+        public IActionResult AccessDenied()
+        {
+            return View();
         }
 
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
+        }
+
+        private IActionResult KullaniciAnaSayfasinaYonlendir()
+        {
+            if (User.IsInRole("SuperAdmin")) return RedirectToAction("Index", "Admin");
+            if (User.IsInRole("KatGorevlisi")) return RedirectToAction("Index", "Home");
+            if (User.HasClaim(c => c.Type == "OdaNumarasi")) return RedirectToAction("Oda", "Home");
+            if (User.IsInRole("AidatSorumlusu")) return RedirectToAction("AidatTakip", "Home");
+
+            return RedirectToAction("Logout", "Account");
         }
     }
 }
