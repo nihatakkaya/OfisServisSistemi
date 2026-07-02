@@ -48,35 +48,62 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 
 ## 📸 Ekran Görüntüleri ve Arayüz Turu
 
-
 ### 1. Sisteme Giriş (Login)
 Role-Based Access Control (RBAC) ile güvenli yetkilendirme ve kurumsal giriş ekranı.
+
 ![Giriş Ekranı](images/site_girisi.jpeg)
 
 ### 2. Personel / Oda Ekranı
 Gerçek zamanlı sepet, ürün seçimi ve anlık sipariş durumu takip panosu.
+
 ![Oda Ekranı](images/kullanici_ekrani.jpeg)
 
 ### 3. Görevli (Mutfak / Hizmet) Ekranı
 Anlık siparişlerin düştüğü, stok ve mola yönetiminin yapıldığı kat görevlisi kontrol merkezi.
+
 ![Görevli Ekranı](images/gorevli_ekrani.jpeg)
 
 ### 4. Sistem ve Bina Yönetimi (Süper Admin)
 Kurumun hiyerarşik altyapısının (Binalar ve Katlar) yönetildiği ana panel.
+
 ![Bina ve Kat Yönetimi](images/admin_ekrani.jpeg)
 
 ### 5. Personel Tanımlama (Canlı Arama Modülü)
 API destekli "Autocomplete" arama motoru ile odalara/katlara personel atama ekranı.
+
 ![Kullanıcı Yönetimi](images/admin_ekrani_2.jpeg)
 
 ### 6. Sistem Analitiği ve Raporlama
 Tarih filtreli dinamik grafikler ve Excel çıktısı alınabilen iş zekası paneli.
+
 ![Sistem Analitiği](images/admin_ekrani_3.jpeg)
+
+### 7. Kantin ve Aidat Yönetimi
+Kurum içerisindeki kantin veya çay ocağı tanımlama, aylık aidat tutarı belirleme ve ilgili kantine bağlı kişileri yönetme ekranıdır.
+
+![Kantin ve Aidat Yönetimi](images/kantin_ve_aidat_yonetimi.jpeg)
+
+### 8. Aidat Sorumlusu Yetkilendirme
+Belirli kullanıcılara bina veya kat bazlı aidat tahsilatı ve takip yetkisi verme ekranıdır.
+
+![Aidat Sorumlusu Yetkilendirme](images/aidat_sorumlusu_yetkilendirme.jpeg)
+
+### 9. Aidat Kantin Havuzu
+Seçilen kantine ait aylık aidat tahsilatlarının, parçalı ödemelerin, kalan borçların ve gider kayıtlarının takip edildiği ekrandır.
+
+![Aidat Kantin Havuzu](images/aidat_kantin_havuzu.jpeg)
+
+### 10. Aidat Harcama Raporu
+Seçilen aya ait toplanan aidat, yapılan harcama ve kalan bakiye bilgilerinin detaylı olarak listelendiği rapor ekranıdır.
+
+![Aidat Harcama Raporu](images/aidat_harcama_rapor.jpeg)
 
 ---
 
 ## ⚙️ Kurulum ve Çalıştırma
 
 1. Projeyi klonlayın:
+
    ```bash
-   git clone [https://github.com/nihatakkaya/OfisServisSistemi.git](https://github.com/nihatakkaya/OfisServisSistemi.git)
+   git clone https://github.com/nihatakkaya/OfisServisSistemi.git
+   ```
