@@ -36,7 +36,7 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 
 ---
 
-## 🛠️ Teknolojik Altyapı
+## Teknolojik Altyapı
 
 * **Backend:** C#, ASP.NET Core MVC (.NET 8.0)
 * **Veritabanı:** Entity Framework Core (Code First), SQL Server
@@ -46,7 +46,7 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 
 ---
 
-## 📸 Ekran Görüntüleri ve Arayüz Turu
+## Ekran Görüntüleri ve Arayüz Turu
 
 ### 1. Sisteme Giriş (Login)
 Role-Based Access Control (RBAC) ile güvenli yetkilendirme ve kurumsal giriş ekranı.
@@ -100,10 +100,4 @@ Seçilen aya ait toplanan aidat, yapılan harcama ve kalan bakiye bilgilerinin d
 
 ---
 
-## ⚙️ Kurulum ve Çalıştırma
 
-1. Projeyi klonlayın:
-
-   ```bash
-   git clone https://github.com/nihatakkaya/OfisServisSistemi.git
-   ```
