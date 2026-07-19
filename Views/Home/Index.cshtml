@@ -11,6 +11,30 @@
         o => !string.IsNullOrEmpty(o.OdaNumarasi) ? o.OdaNumarasi : o.KullaniciAdi
     );
 
+    var cayOcagiOdaGruplari = cayOcagiTalepler
+        .GroupBy(t => t.OdaAdi)
+        .Select(g => new
+        {
+            OdaAdi = g.Key,
+            GercekOdaAdi = odaSozlugu.ContainsKey(g.Key) ? odaSozlugu[g.Key] : g.Key,
+            Talepler = g.OrderBy(t => t.OlusturulmaTarihi).ToList(),
+            BekleyenSayisi = g.Count(t => t.Durum == "Bekliyor")
+        })
+        .OrderBy(g => g.GercekOdaAdi)
+        .ToList();
+
+    var hizmetOdaGruplari = hizmetTalepler
+        .GroupBy(t => t.OdaAdi)
+        .Select(g => new
+        {
+            OdaAdi = g.Key,
+            GercekOdaAdi = odaSozlugu.ContainsKey(g.Key) ? odaSozlugu[g.Key] : g.Key,
+            Talepler = g.OrderBy(t => t.OlusturulmaTarihi).ToList(),
+            BekleyenSayisi = g.Count(t => t.Durum == "Bekliyor")
+        })
+        .OrderBy(g => g.GercekOdaAdi)
+        .ToList();
+
     string GetUrunIkon(string ad)
     {
         if (string.IsNullOrWhiteSpace(ad)) return "https://cdn-icons-png.flaticon.com/512/5164/5164023.png";
@@ -222,6 +246,114 @@
 
     .kolon-hizmet .siparis-bilet {
         border-left-color: var(--renk-teal);
+    }
+
+    .oda-akordiyon {
+        background: white;
+        border: 1px solid #e1e5eb;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .oda-akordiyon-baslik {
+        width: 100%;
+        border: none;
+        background: white;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        cursor: pointer;
+        text-align: left;
+        color: #2c3e50;
+    }
+
+        .oda-akordiyon-baslik:hover {
+            background: #f8f9fa;
+        }
+
+    .oda-akordiyon-sol {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .oda-akordiyon-ok {
+        color: var(--renk-gri);
+        font-size: 0.95rem;
+        width: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .oda-akordiyon-oda {
+        font-size: 1.1rem;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .oda-akordiyon-ozet {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .oda-siparis-sayisi {
+        background: #e9ecef;
+        color: #495057;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 800;
+    }
+
+    .oda-bekleyen-sayisi {
+        background: #fff5f5;
+        color: var(--renk-uyari);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        border: 1px solid #ffcdd2;
+    }
+
+    .oda-akordiyon-icerik {
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        border-top: 1px solid #eef1f4;
+        background: #f8f9fa;
+    }
+
+    .oda-akordiyon.acik .oda-akordiyon-icerik {
+        display: flex;
+    }
+
+    @@media (max-width: 768px) {
+        .oda-akordiyon-baslik {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .oda-akordiyon-ozet {
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .siparis-bilet {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .bilet-aksiyon {
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
     }
 
     .bilet-detay {
@@ -625,6 +757,213 @@
             opacity: 1;
         }
     }
+
+    @@media (max-width: 1200px) {
+        .kolon-stok {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @@media (max-width: 900px) {
+        body {
+            overflow-x: hidden;
+        }
+
+        .container-fluid {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .header-bar {
+            align-items: stretch;
+            border-left-width: 4px;
+            flex-direction: column;
+            gap: 14px;
+            margin: 12px 0;
+            padding: 14px;
+        }
+
+        .kat-info {
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .kat-logo {
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .kat-detay {
+            min-width: 0;
+        }
+
+        .kat-baslik {
+            font-size: 1.2rem;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .kat-alt-baslik {
+            font-size: 0.75rem;
+            line-height: 1.3;
+        }
+
+        .header-buttons {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: 1fr;
+        }
+
+        .btn-ozel {
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+
+        .ana-pano {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 14px;
+            padding-bottom: 18px;
+        }
+
+        .kolon-stok {
+            grid-column: auto;
+        }
+
+        .pano-kolon {
+            border-radius: 8px;
+        }
+
+        .kolon-baslik {
+            font-size: 0.95rem;
+            line-height: 1.25;
+            padding: 12px;
+        }
+
+        .havuz-alan {
+            gap: 10px;
+            min-height: auto;
+            padding: 10px;
+        }
+
+        .oda-akordiyon-baslik {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 12px;
+        }
+
+        .oda-akordiyon-sol,
+        .oda-akordiyon-ozet {
+            width: 100%;
+        }
+
+        .oda-akordiyon-oda {
+            font-size: 1.05rem;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+
+        .oda-akordiyon-ozet {
+            flex-wrap: wrap;
+        }
+
+        .oda-akordiyon-icerik {
+            padding: 8px;
+        }
+
+        .siparis-bilet {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .bilet-satir1 {
+            gap: 8px;
+        }
+
+        .urun-adi {
+            flex: 1 1 100%;
+            font-size: 0.98rem;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .not-alani {
+            font-size: 0.82rem;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .bilet-aksiyon {
+            display: grid;
+            flex-shrink: 1;
+            gap: 8px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+        }
+
+        .btn-iptal,
+        .btn-teslim {
+            min-height: 42px;
+            padding: 10px 8px;
+            width: 100%;
+        }
+
+        .badge-bekliyor {
+            display: block;
+            grid-column: 1 / -1;
+            text-align: center;
+            width: 100%;
+        }
+
+        .stok-satir {
+            align-items: stretch;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stok-kontroller {
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .modal-kutu {
+            max-height: calc(100vh - 24px);
+            overflow-y: auto;
+            padding: 20px;
+            width: calc(100vw - 24px);
+        }
+
+        #toast-container {
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+        }
+
+        .toast-box {
+            box-sizing: border-box;
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 420px) {
+        .header-buttons {
+            grid-template-columns: 1fr;
+        }
+
+        .oda-siparis-sayisi,
+        .oda-bekleyen-sayisi,
+        .sure-sayaci,
+        .miktar-badge {
+            font-size: 0.75rem;
+        }
+
+        .bilet-aksiyon {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 
 <div class="container-fluid" style="max-width: 1600px;">
@@ -638,10 +977,6 @@
             </div>
         </div>
         <div class="header-buttons">
-            @if (ViewBag.AidatYetkiliMi == true)
-            {
-                <a href="/Home/AidatTakip" class="btn-ozel" style="color:var(--renk-yesil); border-color:var(--renk-yesil); background:#e6f4ea;">Aidat Yönetimi</a>
-            }
             <a href="/Home/Gecmis" class="btn-ozel">📋 Geçmiş Siparişler</a>
             <a href="/Account/Logout" class="btn-ozel btn-cikis">⏻ Çıkış</a>
         </div>
@@ -661,43 +996,64 @@
                 }
                 else
                 {
-                    foreach (var talep in cayOcagiTalepler)
+                    var cayGrupIndex = 0;
+                    foreach (var odaGrubu in cayOcagiOdaGruplari)
                     {
-                        string gercekOdaAdi = odaSozlugu.ContainsKey(talep.OdaAdi) ? odaSozlugu[talep.OdaAdi] : talep.OdaAdi;
-                        string ikon = GetUrunIkon(talep.IslemTuru);
+                        string grupId = $"cay-oda-grup-{cayGrupIndex++}";
 
-                        <div class="siparis-bilet" id="satir-@talep.Id">
-                            <div class="bilet-detay">
-                                <div class="bilet-satir1">
-                                    <span class="oda-etiketi">ODA @gercekOdaAdi</span>
-                                    <div class="urun-adi">
-                                        @if (ikon.StartsWith("http"))
-                                        {
-                                            <img src="@ikon" class="dinamik-ikon" />
-                                        }
-                                        else
-                                        {
-                                            <span>@ikon</span>
-                                        }
-                                        @talep.IslemTuru
+                        <div class="oda-akordiyon" id="kapsayici-@grupId">
+                            <button type="button" class="oda-akordiyon-baslik" onclick="toggleOdaGrubu('@grupId')" aria-expanded="false" aria-controls="@grupId">
+                                <span class="oda-akordiyon-sol">
+                                    <span class="oda-akordiyon-ok" id="ok-@grupId">▶</span>
+                                    <span class="oda-akordiyon-oda">ODA @odaGrubu.GercekOdaAdi</span>
+                                </span>
+                                <span class="oda-akordiyon-ozet">
+                                    <span class="oda-siparis-sayisi">@odaGrubu.Talepler.Count sipariş</span>
+                                    @if (odaGrubu.BekleyenSayisi > 0)
+                                    {
+                                        <span class="oda-bekleyen-sayisi">@odaGrubu.BekleyenSayisi bekliyor</span>
+                                    }
+                                </span>
+                            </button>
+                            <div class="oda-akordiyon-icerik" id="@grupId">
+                                @foreach (var talep in odaGrubu.Talepler)
+                                {
+                                    string ikon = GetUrunIkon(talep.IslemTuru);
+
+                                    <div class="siparis-bilet" id="satir-@talep.Id">
+                                        <div class="bilet-detay">
+                                            <div class="bilet-satir1">
+                                                <div class="urun-adi">
+                                                    @if (ikon.StartsWith("http"))
+                                                    {
+                                                        <img src="@ikon" class="dinamik-ikon" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@ikon</span>
+                                                    }
+                                                    @talep.IslemTuru
+                                                </div>
+                                                <span class="miktar-badge">x@(talep.Miktar)</span>
+                                                <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-durum="@talep.Durum" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
+                                            {
+                                                <div class="bilet-satir2"><span class="not-alani">Not: @talep.Aciklama</span></div>
+                                            }
+                                        </div>
+                                        <div class="bilet-aksiyon">
+                                            @if (talep.Durum == "Bekliyor")
+                                            {
+                                                <button class="btn-iptal" onclick="iptalModalAc(@talep.Id)">✖ İptal</button>
+                                                <button class="btn-teslim" onclick="teslimEt(@talep.Id)">✓ Teslim Et</button>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-bekliyor">Onay Bekleniyor</span>
+                                            }
+                                        </div>
                                     </div>
-                                    <span class="miktar-badge">x@(talep.Miktar)</span>
-                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-durum="@talep.Durum" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
-                                </div>
-                                @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
-                                {
-                                    <div class="bilet-satir2"><span class="not-alani">📝 Not: @talep.Aciklama</span></div>
-                                }
-                            </div>
-                            <div class="bilet-aksiyon">
-                                @if (talep.Durum == "Bekliyor")
-                                {
-                                    <button class="btn-iptal" onclick="iptalModalAc(@talep.Id)">✖ İptal</button>
-                                    <button class="btn-teslim" onclick="teslimEt(@talep.Id)">✓ Teslim Et</button>
-                                }
-                                else
-                                {
-                                    <span class="badge-bekliyor">Onay Bekleniyor</span>
                                 }
                             </div>
                         </div>
@@ -715,32 +1071,53 @@
                 }
                 else
                 {
-                    foreach (var talep in hizmetTalepler)
+                    var hizmetGrupIndex = 0;
+                    foreach (var odaGrubu in hizmetOdaGruplari)
                     {
-                        string gercekOdaAdi = odaSozlugu.ContainsKey(talep.OdaAdi) ? odaSozlugu[talep.OdaAdi] : talep.OdaAdi;
-                        string ikon = talep.IslemTuru == "Temizlik" ? "🧹" : "🗑️";
+                        string grupId = $"hizmet-oda-grup-{hizmetGrupIndex++}";
 
-                        <div class="siparis-bilet" id="satir-@talep.Id">
-                            <div class="bilet-detay">
-                                <div class="bilet-satir1">
-                                    <span class="oda-etiketi">ODA @gercekOdaAdi</span>
-                                    <div class="urun-adi"><span>@ikon</span> @talep.IslemTuru</div>
-                                    <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-durum="@talep.Durum" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
-                                </div>
-                                @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
+                        <div class="oda-akordiyon" id="kapsayici-@grupId">
+                            <button type="button" class="oda-akordiyon-baslik" onclick="toggleOdaGrubu('@grupId')" aria-expanded="false" aria-controls="@grupId">
+                                <span class="oda-akordiyon-sol">
+                                    <span class="oda-akordiyon-ok" id="ok-@grupId">▶</span>
+                                    <span class="oda-akordiyon-oda">ODA @odaGrubu.GercekOdaAdi</span>
+                                </span>
+                                <span class="oda-akordiyon-ozet">
+                                    <span class="oda-siparis-sayisi">@odaGrubu.Talepler.Count talep</span>
+                                    @if (odaGrubu.BekleyenSayisi > 0)
+                                    {
+                                        <span class="oda-bekleyen-sayisi">@odaGrubu.BekleyenSayisi bekliyor</span>
+                                    }
+                                </span>
+                            </button>
+                            <div class="oda-akordiyon-icerik" id="@grupId">
+                                @foreach (var talep in odaGrubu.Talepler)
                                 {
-                                    <div class="bilet-satir2"><span class="not-alani">📝 Not: @talep.Aciklama</span></div>
-                                }
-                            </div>
-                            <div class="bilet-aksiyon">
-                                @if (talep.Durum == "Bekliyor")
-                                {
-                                    <button class="btn-iptal" onclick="iptalModalAc(@talep.Id)">✖ İptal</button>
-                                    <button class="btn-teslim" onclick="teslimEt(@talep.Id)">✓ Tamamla</button>
-                                }
-                                else
-                                {
-                                    <span class="badge-bekliyor">Onay Bekleniyor</span>
+                                    string ikon = talep.IslemTuru == "Temizlik" ? "🧹" : "🗑️";
+
+                                    <div class="siparis-bilet" id="satir-@talep.Id">
+                                        <div class="bilet-detay">
+                                            <div class="bilet-satir1">
+                                                <div class="urun-adi"><span>@ikon</span> @talep.IslemTuru</div>
+                                                <span class="sure-sayaci" data-satir-id="satir-@talep.Id" data-durum="@talep.Durum" data-tarih="@talep.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss")">...</span>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(talep.Aciklama) && talep.Aciklama != "-")
+                                            {
+                                                <div class="bilet-satir2"><span class="not-alani">Not: @talep.Aciklama</span></div>
+                                            }
+                                        </div>
+                                        <div class="bilet-aksiyon">
+                                            @if (talep.Durum == "Bekliyor")
+                                            {
+                                                <button class="btn-iptal" onclick="iptalModalAc(@talep.Id)">✖ İptal</button>
+                                                <button class="btn-teslim" onclick="teslimEt(@talep.Id)">✓ Tamamla</button>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-bekliyor">Onay Bekleniyor</span>
+                                            }
+                                        </div>
+                                    </div>
                                 }
                             </div>
                         </div>
@@ -850,7 +1227,38 @@
         container.insertAdjacentHTML('beforeend', html);
     }
 
-    function teslimEt(id) { fetch('/Home/AdminTeslimEtti?id=' + id, { method: 'POST' }).then(res => { if(res.ok) document.getElementById('satir-' + id).style.display = 'none'; }); }
+    function toggleOdaGrubu(grupId) {
+        var icerik = document.getElementById(grupId);
+        var kapsayici = document.getElementById('kapsayici-' + grupId);
+        var ok = document.getElementById('ok-' + grupId);
+        if (!icerik || !kapsayici) return;
+
+        var acikMi = kapsayici.classList.toggle('acik');
+        if (ok) ok.innerText = acikMi ? '▼' : '▶';
+
+        var baslik = kapsayici.querySelector('.oda-akordiyon-baslik');
+        if (baslik) baslik.setAttribute('aria-expanded', acikMi ? 'true' : 'false');
+    }
+
+    function siparisSatiriniGizle(id) {
+        var satir = document.getElementById('satir-' + id);
+        if (!satir) return;
+
+        var grupIcerik = satir.closest('.oda-akordiyon-icerik');
+        satir.style.display = 'none';
+
+        if (!grupIcerik) return;
+
+        var gorunenSiparisVar = Array.from(grupIcerik.querySelectorAll('.siparis-bilet'))
+            .some(function(item) { return item.style.display !== 'none'; });
+
+        if (!gorunenSiparisVar) {
+            var kapsayici = grupIcerik.closest('.oda-akordiyon');
+            if (kapsayici) kapsayici.style.display = 'none';
+        }
+    }
+
+    function teslimEt(id) { fetch('/Home/AdminTeslimEtti?id=' + id, { method: 'POST' }).then(res => { if(res.ok) siparisSatiriniGizle(id); }); }
     function stokGuncelle(id, degisim) { fetch(`/Home/UrunMiktarGuncelle?id=${id}&degisim=${degisim}`, { method: 'POST' }).then(res => { if(res.ok) location.reload(); }); }
     function urunSil(id) { if(!confirm("Bu ürünü menüden kaldırmak istediğinize emin misiniz?")) return; fetch(`/Home/UrunSil?id=${id}`, { method: 'POST' }).then(res => { if(res.ok) location.reload(); }); }
 
@@ -880,7 +1288,7 @@
         var id = document.getElementById('iptalEdilecekTalepId').value;
         var not = document.getElementById('iptalNotuInput').value;
         fetch(`/Home/AdminReddetti?id=${id}&iptalNotu=${encodeURIComponent(not)}`, { method: 'POST' })
-            .then(res => { if(res.ok) { iptalModalKapat(); document.getElementById('satir-' + id).style.display = 'none'; } });
+            .then(res => { if(res.ok) { iptalModalKapat(); siparisSatiriniGizle(id); } });
     }
 
     window.onclick = function(event) {

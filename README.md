@@ -46,6 +46,26 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 
 ---
 
+## Docker ile Çalıştırma
+
+Projeyi Docker Compose ile çalıştırmadan önce `.env.example` dosyasını `.env` adıyla kopyalayın ve gerekli ortam değişkenlerini doldurun. Okul API adresleri ve prod şifreleri GitHub'a yüklenmez; çalışma zamanında `.env` veya sunucu ortam değişkenleri üzerinden verilir.
+
+```powershell
+Copy-Item .env.example .env
+docker compose up --build
+```
+
+Zorunlu değişkenler:
+
+* `MSSQL_SA_PASSWORD`: SQL Server SA şifresi
+* `SCHOOL_API_LOGIN_URL`: Okul giriş API adresi
+* `SCHOOL_API_SEARCH_USER_URL`: Okul kullanıcı arama API adresi
+* `SUPER_ADMIN_KULLANICI_ADI`: İsteğe bağlı ilk super admin kullanıcı adı
+
+Uygulama açılışta EF Core migration'larını otomatik uygular ve başlangıç seed verilerini oluşturur.
+
+---
+
 ## Ekran Görüntüleri ve Arayüz Turu
 
 ### 1. Sisteme Giriş (Login)

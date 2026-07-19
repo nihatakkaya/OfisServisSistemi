@@ -292,6 +292,46 @@
         color: var(--renk-gri);
         font-size: 0.9rem;
     }
+
+    .kat-toplu-islem {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 14px 18px;
+        border-bottom: 1px solid #eef1f5;
+        background: #fbfcfe;
+    }
+
+    .kat-tekil-ekle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1 1 420px;
+        min-width: 260px;
+    }
+
+    .kat-tekil-input {
+        max-width: 280px;
+        min-width: 180px;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 768px) {
+        .kat-toplu-islem,
+        .kat-tekil-ekle {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .kat-tekil-input,
+        .kat-toplu-islem form,
+        .kat-toplu-islem button {
+            max-width: none;
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="ana-konteyner">
@@ -446,6 +486,22 @@
                                 <span class="uye-sayisi">@katGrubu.Uyeler.Count kişi</span>
                             </summary>
                             <div class="uye-grup-icerik">
+                                @if (katGrubu.KatId.HasValue)
+                                {
+                                    <div class="kat-toplu-islem">
+                                        <form action="/Admin/KantinKatKullaniciEkle" method="post" class="kat-tekil-ekle">
+                                            <input type="hidden" name="kantinId" value="@Model.Id" />
+                                            <input type="hidden" name="katId" value="@katGrubu.KatId.Value" />
+                                            <input type="text" name="kullaniciAdi" class="form-control form-control-sm kat-tekil-input" placeholder="Kullanıcı adı" autocomplete="off" required />
+                                            <button type="submit" class="btn btn-sm btn-primary fw-bold" style="background:var(--renk-ana-mavi);">Bu Kata Ekle</button>
+                                        </form>
+                                        <form action="/Admin/KantinKatKullanicilariniSil" method="post" onsubmit="return confirm('Bu kattaki tüm personelleri kantinden çıkarmak istediğinize emin misiniz?');">
+                                            <input type="hidden" name="kantinId" value="@Model.Id" />
+                                            <input type="hidden" name="katId" value="@katGrubu.KatId.Value" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">Bu Katı Kantinden Çıkar</button>
+                                        </form>
+                                    </div>
+                                }
                                 <table class="custom-table" style="box-shadow:none; border-radius:0;">
                                     <thead>
                                         <tr>

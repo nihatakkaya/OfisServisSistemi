@@ -11,10 +11,105 @@ namespace OfisServisSistemi.Controllers
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AdminController(ApplicationDbContext context)
+        public AdminController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
+        }
+
+        private string? OkulApiSearchUserLink(string kullaniciAdi)
+        {
+            var searchUrl = _configuration["SchoolApi:SearchUserUrl"];
+            if (string.IsNullOrWhiteSpace(searchUrl)) return null;
+
+            var encodedUserName = Uri.EscapeDataString(kullaniciAdi);
+            return searchUrl.Contains("{0}")
+                ? string.Format(searchUrl, encodedUserName)
+                : $"{searchUrl}?KullaniciAdi={encodedUserName}";
+        }
+
+        private static void OkulApiKullaniciAdlariniTopla(JsonElement element, List<string> sonuclar)
+        {
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                var deger = element.GetString();
+                if (!string.IsNullOrWhiteSpace(deger))
+                {
+                    sonuclar.Add(deger.Trim());
+                }
+
+                return;
+            }
+
+            if (element.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in element.EnumerateArray())
+                {
+                    OkulApiKullaniciAdlariniTopla(item, sonuclar);
+                }
+
+                return;
+            }
+
+            if (element.ValueKind != JsonValueKind.Object) return;
+
+            foreach (var property in element.EnumerateObject())
+            {
+                if ((property.Name.Equals("KullaniciAdi", StringComparison.OrdinalIgnoreCase) ||
+                     property.Name.Equals("KullanıcıAdı", StringComparison.OrdinalIgnoreCase) ||
+                     property.Name.Equals("UserName", StringComparison.OrdinalIgnoreCase)) &&
+                    property.Value.ValueKind == JsonValueKind.String)
+                {
+                    var kullaniciAdi = property.Value.GetString();
+                    if (!string.IsNullOrWhiteSpace(kullaniciAdi))
+                    {
+                        sonuclar.Add(kullaniciAdi.Trim());
+                    }
+                }
+                else if (property.Value.ValueKind == JsonValueKind.Object || property.Value.ValueKind == JsonValueKind.Array)
+                {
+                    OkulApiKullaniciAdlariniTopla(property.Value, sonuclar);
+                }
+            }
+        }
+
+        private async Task<List<string>> OkulApiKullaniciAra(string kullaniciAdi)
+        {
+            if (string.IsNullOrWhiteSpace(kullaniciAdi)) return new List<string>();
+
+            var arananKullaniciAdi = kullaniciAdi.Trim();
+            var searchUrl = OkulApiSearchUserLink(arananKullaniciAdi);
+            if (string.IsNullOrWhiteSpace(searchUrl)) return new List<string>();
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.ParseAdd("*/*");
+
+            var response = await client.GetAsync(searchUrl);
+            if (!response.IsSuccessStatusCode) return new List<string>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json)) return new List<string>();
+
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                var sonuclar = new List<string>();
+                OkulApiKullaniciAdlariniTopla(document.RootElement, sonuclar);
+
+                return sonuclar
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Where(x => x.Contains(arananKullaniciAdi, StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            catch (JsonException)
+            {
+                return json.Contains(arananKullaniciAdi, StringComparison.OrdinalIgnoreCase)
+                    ? new List<string> { arananKullaniciAdi }
+                    : new List<string>();
+            }
         }
 
         private void LogKaydet(string islemTuru, string detay)
@@ -35,18 +130,90 @@ namespace OfisServisSistemi.Controllers
             var user = await _context.Kullanicilar.FirstOrDefaultAsync(u => u.Id == kullaniciId && !u.SilindiMi);
             if (user == null) return;
 
-            user.AidatYoneticisiMi = await _context.AidatSorumlusuYetkileri
+            var aktifAidatYetkisiVar = await _context.AidatSorumlusuYetkileri
                 .AnyAsync(y => y.KullaniciId == kullaniciId && !y.SilindiMi && !y.Kantin.SilindiMi);
+
+            user.AidatYoneticisiMi = aktifAidatYetkisiVar;
+            if (!aktifAidatYetkisiVar && user.Rol == "AidatSorumlusu")
+            {
+                user.Rol = string.Empty;
+            }
 
             await _context.SaveChangesAsync();
         }
 
-        public IActionResult Index()
+        private async Task AidatYoneticisiDurumlariniGuncelle(IEnumerable<int> kullaniciIds)
         {
-            var binalar = _context.Binalar
-                                  .Where(b => !b.SilindiMi)
-                                  .Include(b => b.Katlar.Where(k => !k.SilindiMi))
-                                  .ToList();
+            var idler = kullaniciIds.Distinct().ToList();
+            if (!idler.Any()) return;
+
+            var aktifAidatYoneticisiIds = await _context.AidatSorumlusuYetkileri
+                .Where(y => idler.Contains(y.KullaniciId) && !y.SilindiMi && !y.Kantin.SilindiMi)
+                .Select(y => y.KullaniciId)
+                .Distinct()
+                .ToListAsync();
+
+            var aktifSet = aktifAidatYoneticisiIds.ToHashSet();
+            var kullanicilar = await _context.Kullanicilar
+                .Where(u => idler.Contains(u.Id) && !u.SilindiMi)
+                .ToListAsync();
+
+            foreach (var user in kullanicilar)
+            {
+                var aktifAidatYetkisiVar = aktifSet.Contains(user.Id);
+                user.AidatYoneticisiMi = aktifAidatYetkisiVar;
+
+                if (!aktifAidatYetkisiVar && user.Rol == "AidatSorumlusu")
+                {
+                    user.Rol = string.Empty;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task AidatYetkiTutarliliginiTemizle()
+        {
+            var silinmisKantinIds = await _context.Kantinler
+                .Where(k => k.SilindiMi)
+                .Select(k => k.Id)
+                .ToListAsync();
+
+            var etkilenenKullaniciIds = new List<int>();
+
+            if (silinmisKantinIds.Any())
+            {
+                var gecersizYetkiler = await _context.AidatSorumlusuYetkileri
+                    .Where(y => silinmisKantinIds.Contains(y.KantinId) && !y.SilindiMi)
+                    .ToListAsync();
+
+                foreach (var yetki in gecersizYetkiler)
+                {
+                    yetki.SilindiMi = true;
+                }
+
+                etkilenenKullaniciIds.AddRange(gecersizYetkiler.Select(y => y.KullaniciId));
+            }
+
+            var aidatBayragiTasiyanKullaniciIds = await _context.Kullanicilar
+                .Where(u => !u.SilindiMi && (u.AidatYoneticisiMi || u.Rol == "AidatSorumlusu"))
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            etkilenenKullaniciIds.AddRange(aidatBayragiTasiyanKullaniciIds);
+
+            await _context.SaveChangesAsync();
+            await AidatYoneticisiDurumlariniGuncelle(etkilenenKullaniciIds);
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            await AidatYetkiTutarliliginiTemizle();
+
+            var binalar = await _context.Binalar
+                                        .Where(b => !b.SilindiMi)
+                                        .Include(b => b.Katlar.Where(k => !k.SilindiMi))
+                                        .ToListAsync();
             return View(binalar);
         }
 
@@ -318,20 +485,8 @@ namespace OfisServisSistemi.Controllers
 
             try
             {
-                using (var client = new HttpClient())
-                {
-                    string okulApiLink = $"https://sabis.subu.edu.tr/api/search?q={q}";
-                    var response = await client.GetAsync(okulApiLink);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var apiSonuclar = await response.Content.ReadFromJsonAsync<List<string>>();
-                        if (apiSonuclar != null)
-                        {
-                            birlesikSonuclar.AddRange(apiSonuclar);
-                        }
-                    }
-                }
+                var apiSonuclar = await OkulApiKullaniciAra(q);
+                birlesikSonuclar.AddRange(apiSonuclar);
             }
             catch
             {
@@ -358,16 +513,8 @@ namespace OfisServisSistemi.Controllers
 
                 try
                 {
-                    using (var client = new HttpClient())
-                    {
-                        string okulDogrulamaLink = $"https://sabis.subu.edu.tr/api/check?kullanici={kullaniciAdi}";
-
-                        var response = await client.GetAsync(okulDogrulamaLink);
-                        if (response.IsSuccessStatusCode)
-                        {
-                            okulApisindeVarMi = true;
-                        }
-                    }
+                    var apiSonuclar = await OkulApiKullaniciAra(kullaniciAdi);
+                    okulApisindeVarMi = apiSonuclar.Any(x => x.Equals(kullaniciAdi, StringComparison.OrdinalIgnoreCase));
                 }
                 catch
                 {
@@ -447,9 +594,11 @@ namespace OfisServisSistemi.Controllers
             return RedirectToAction("Index");
         }
 
-        public IActionResult Kantinler()
+        public async Task<IActionResult> Kantinler()
         {
-            var kantinler = _context.Kantinler.Where(k => !k.SilindiMi).ToList();
+            await AidatYetkiTutarliliginiTemizle();
+
+            var kantinler = await _context.Kantinler.Where(k => !k.SilindiMi).ToListAsync();
             return View(kantinler);
         }
 
@@ -486,18 +635,21 @@ namespace OfisServisSistemi.Controllers
         // -----------------------------------------------------------
 
         [HttpPost]
-        public IActionResult KantinSil(int id)
+        public async Task<IActionResult> KantinSil(int id)
         {
-            var kantin = _context.Kantinler.FirstOrDefault(k => k.Id == id);
+            var kantin = await _context.Kantinler.FirstOrDefaultAsync(k => k.Id == id);
             if (kantin != null)
             {
                 kantin.SilindiMi = true;
-                var baglantilar = _context.KantinKullanicilari.Where(kk => kk.KantinId == id).ToList();
+                var baglantilar = await _context.KantinKullanicilari.Where(kk => kk.KantinId == id).ToListAsync();
                 foreach (var b in baglantilar) b.SilindiMi = true;
-                var aidatYetkileri = _context.AidatSorumlusuYetkileri.Where(y => y.KantinId == id).ToList();
+
+                var aidatYetkileri = await _context.AidatSorumlusuYetkileri.Where(y => y.KantinId == id).ToListAsync();
+                var etkilenenKullaniciIds = aidatYetkileri.Select(y => y.KullaniciId).Distinct().ToList();
                 foreach (var yetki in aidatYetkileri) yetki.SilindiMi = true;
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+                await AidatYoneticisiDurumlariniGuncelle(etkilenenKullaniciIds);
                 LogKaydet("Kantin Silindi", $"'{kantin.Ad}' adlı kantin silindi.");
             }
             return RedirectToAction("Kantinler");
@@ -581,6 +733,8 @@ namespace OfisServisSistemi.Controllers
                     {
                         grup = new KantinUyeGrup
                         {
+                            BinaId = oda.Kat.BinaId,
+                            KatId = oda.KatId,
                             BinaAdi = oda.Kat.Bina.Ad,
                             KatAdi = oda.Kat.Ad
                         };
@@ -744,16 +898,22 @@ namespace OfisServisSistemi.Controllers
 
             foreach (var kId in kattakiKullanicilar)
             {
-                bool zatenVarMi = await _context.KantinKullanicilari
-                    .AnyAsync(kk => kk.KantinId == kantinId && kk.KullaniciId == kId && !kk.SilindiMi);
+                var mevcutUyelikler = await _context.KantinKullanicilari
+                    .Where(kk => kk.KantinId == kantinId && kk.KullaniciId == kId)
+                    .ToListAsync();
 
-                if (!zatenVarMi)
+                if (!mevcutUyelikler.Any())
                 {
                     _context.KantinKullanicilari.Add(new KantinKullanici
                     {
                         KantinId = kantinId,
                         KullaniciId = kId
                     });
+                    eklenenSayisi++;
+                }
+                else if (!mevcutUyelikler.Any(kk => !kk.SilindiMi))
+                {
+                    mevcutUyelikler.First().SilindiMi = false;
                     eklenenSayisi++;
                 }
             }
@@ -767,6 +927,135 @@ namespace OfisServisSistemi.Controllers
             else
             {
                 TempData["Hata"] = "Bu kattaki personeller zaten kantine ekli veya katta personel bulunmuyor.";
+            }
+
+            return RedirectToAction("KantinDetay", new { id = kantinId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> KantinKatKullaniciEkle(int kantinId, int katId, string kullaniciAdi)
+        {
+            if (string.IsNullOrWhiteSpace(kullaniciAdi))
+            {
+                TempData["Hata"] = "Kullanıcı adı boş olamaz.";
+                return RedirectToAction("KantinDetay", new { id = kantinId });
+            }
+
+            kullaniciAdi = kullaniciAdi.Trim();
+
+            var kantin = await _context.Kantinler.FirstOrDefaultAsync(k => k.Id == kantinId && !k.SilindiMi);
+            var kat = await _context.Katlar
+                .Include(k => k.Bina)
+                .FirstOrDefaultAsync(k => k.Id == katId && !k.SilindiMi && !k.Bina.SilindiMi);
+            var user = await _context.Kullanicilar.FirstOrDefaultAsync(u => u.KullaniciAdi == kullaniciAdi && !u.SilindiMi);
+
+            if (kantin == null || kat == null) return RedirectToAction("Kantinler");
+
+            if (user == null)
+            {
+                TempData["Hata"] = $"'{kullaniciAdi}' adlı kullanıcı veritabanında bulunamadı.";
+                return RedirectToAction("KantinDetay", new { id = kantinId });
+            }
+
+            var katBaglantilari = await _context.KullaniciOdalari
+                .Where(ko => ko.KullaniciId == user.Id && ko.KatId == katId)
+                .ToListAsync();
+
+            bool katBaglantisiEklendi = false;
+
+            if (!katBaglantilari.Any())
+            {
+                _context.KullaniciOdalari.Add(new KullaniciOda
+                {
+                    KullaniciId = user.Id,
+                    KatId = katId,
+                    OdaNumarasi = null
+                });
+                katBaglantisiEklendi = true;
+            }
+            else if (!katBaglantilari.Any(ko => !ko.SilindiMi))
+            {
+                katBaglantilari.First().SilindiMi = false;
+                katBaglantisiEklendi = true;
+            }
+
+            var mevcutUyelikler = await _context.KantinKullanicilari
+                .Where(kk => kk.KantinId == kantinId && kk.KullaniciId == user.Id)
+                .ToListAsync();
+
+            if (!mevcutUyelikler.Any())
+            {
+                _context.KantinKullanicilari.Add(new KantinKullanici
+                {
+                    KantinId = kantinId,
+                    KullaniciId = user.Id
+                });
+
+                await _context.SaveChangesAsync();
+                LogKaydet("Kantine Tekil Ekleme", $"'{user.KullaniciAdi}' kullanıcısı '{kat.Bina.Ad} - {kat.Ad}' katı üzerinden '{kantin.Ad}' kantinine eklendi.");
+                TempData["Basari"] = $"'{user.KullaniciAdi}' kullanıcısı {kat.Bina.Ad} - {kat.Ad} katına ve kantine eklendi.";
+            }
+            else if (!mevcutUyelikler.Any(kk => !kk.SilindiMi))
+            {
+                mevcutUyelikler.First().SilindiMi = false;
+
+                await _context.SaveChangesAsync();
+                LogKaydet("Kantine Tekil Ekleme", $"'{user.KullaniciAdi}' kullanıcısının '{kantin.Ad}' kantin üyeliği tekrar aktif edildi.");
+                TempData["Basari"] = $"'{user.KullaniciAdi}' kullanıcısı kantine tekrar eklendi.";
+            }
+            else
+            {
+                await _context.SaveChangesAsync();
+                if (katBaglantisiEklendi)
+                {
+                    LogKaydet("Kantin Kat Bağlantısı", $"'{user.KullaniciAdi}' kullanıcısı zaten '{kantin.Ad}' kantinindeydi, ayrıca '{kat.Bina.Ad} - {kat.Ad}' katına bağlandı.");
+                    TempData["Basari"] = $"'{user.KullaniciAdi}' zaten kantindeydi; {kat.Bina.Ad} - {kat.Ad} katına da eklendi.";
+                }
+                else
+                {
+                    TempData["Hata"] = $"'{user.KullaniciAdi}' kullanıcısı zaten bu kantine ve bu kata ekli.";
+                }
+            }
+
+            return RedirectToAction("KantinDetay", new { id = kantinId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> KantinKatKullanicilariniSil(int kantinId, int katId)
+        {
+            var kantin = await _context.Kantinler.FirstOrDefaultAsync(k => k.Id == kantinId && !k.SilindiMi);
+            var kat = await _context.Katlar
+                .Include(k => k.Bina)
+                .FirstOrDefaultAsync(k => k.Id == katId && !k.SilindiMi && !k.Bina.SilindiMi);
+
+            if (kantin == null || kat == null) return RedirectToAction("Kantinler");
+
+            var kattakiKullaniciIdleri = await _context.KullaniciOdalari
+                .Where(ko => ko.KatId == katId && !ko.SilindiMi)
+                .Select(ko => ko.KullaniciId)
+                .Distinct()
+                .ToListAsync();
+
+            var silinecekUyelikler = await _context.KantinKullanicilari
+                .Where(kk => kk.KantinId == kantinId
+                             && kattakiKullaniciIdleri.Contains(kk.KullaniciId)
+                             && !kk.SilindiMi)
+                .ToListAsync();
+
+            foreach (var uyelik in silinecekUyelikler)
+            {
+                uyelik.SilindiMi = true;
+            }
+
+            if (silinecekUyelikler.Any())
+            {
+                await _context.SaveChangesAsync();
+                LogKaydet("Kantinden Toplu Çıkarma", $"'{kat.Bina.Ad} - {kat.Ad}' personelleri ({silinecekUyelikler.Count} kişi) '{kantin.Ad}' kantininden çıkarıldı.");
+                TempData["Basari"] = $"{kat.Bina.Ad} - {kat.Ad} kapsamındaki {silinecekUyelikler.Count} personel kantinden çıkarıldı.";
+            }
+            else
+            {
+                TempData["Hata"] = "Bu katta kantine bağlı aktif personel bulunamadı.";
             }
 
             return RedirectToAction("KantinDetay", new { id = kantinId });

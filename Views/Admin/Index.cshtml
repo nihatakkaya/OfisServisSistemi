@@ -1,5 +1,6 @@
 ﻿@model List<OfisServisSistemi.Models.Bina>
 @{
+    var aidatYonetimiMi = ViewBag.AidatYonetimiMi == true;
     ViewData["Title"] = "Yönetici - SUBU OYS";
 }
 
@@ -265,20 +266,30 @@
         <div class="header-sol">
             <img src="/img/logo.png" class="header-logo" alt="Logo" />
             <div>
-                <h1 class="header-baslik">Yönetici</h1>
-                <div class="header-alt">Sistem Yönetimi</div>
+                <h1 class="header-baslik">@(aidatYonetimiMi ? "Aidat Sorumlusu" : "Yönetici")</h1>
+                <div class="header-alt">@(aidatYonetimiMi ? "Yetkili Bina ve Kat Yönetimi" : "Sistem Yönetimi")</div>
             </div>
         </div>
         <div class="header-sag">
-            <a href="/Admin/Istatistik" class="btn-header btn-istatistik">İstatistikler</a>
+            @if (aidatYonetimiMi)
+            {
+                <a href="/Home/AidatTakip" class="btn-header btn-istatistik">Aidat Takip</a>
+            }
+            else
+            {
+                <a href="/Admin/Istatistik" class="btn-header btn-istatistik">İstatistikler</a>
+            }
             <a href="/Account/Logout" class="btn-header btn-cikis">Güvenli Çıkış</a>
         </div>
     </div>
 
-    <form action="/Admin/BinaEkle" method="post" class="ekleme-karti">
-        <input type="text" name="ad" class="input-ozel" placeholder="Yeni Bina Adı (Örn: Teknoloji Fakültesi)" required />
-        <button type="submit" class="btn-ekle">Bina Ekle</button>
-    </form>
+    @if (!aidatYonetimiMi)
+    {
+        <form action="/Admin/BinaEkle" method="post" class="ekleme-karti">
+            <input type="text" name="ad" class="input-ozel" placeholder="Yeni Bina Adı (Örn: Teknoloji Fakültesi)" required />
+            <button type="submit" class="btn-ekle">Bina Ekle</button>
+        </form>
+    }
 
     <div class="bina-grid">
         @foreach (var bina in Model)
@@ -290,16 +301,23 @@
                     <h3 class="bina-adi">@bina.Ad</h3>
                 </div>
 
-                <a href="/Admin/BinaDetay/@bina.Id" class="btn-yonet">Katları Yönet</a>
+                <a href="@(aidatYonetimiMi ? $"/Home/AidatBinaDetay/{bina.Id}" : $"/Admin/BinaDetay/{bina.Id}")" class="btn-yonet">Katları Yönet</a>
 
-                <div class="aksiyon-butonlari">
-                    <button type="button" class="btn-aksiyon" data-bs-toggle="modal" data-bs-target="#duzenleModal" onclick="duzenleModaliDoldur(@bina.Id, '@bina.Ad')">Düzenle</button>
-                    <form action="/Admin/BinaSil" method="post" style="flex:1;" onsubmit="return confirm('Bu binayı silmek istediğinize emin misiniz?');">
-                        <input type="hidden" name="id" value="@bina.Id" />
-                        <button type="submit" class="btn-aksiyon btn-sil" style="width:100%;">Sil</button>
-                    </form>
-                </div>
+                @if (!aidatYonetimiMi)
+                {
+                    <div class="aksiyon-butonlari">
+                        <button type="button" class="btn-aksiyon" data-bs-toggle="modal" data-bs-target="#duzenleModal" onclick="duzenleModaliDoldur(@bina.Id, '@bina.Ad')">Düzenle</button>
+                        <form action="/Admin/BinaSil" method="post" style="flex:1;" onsubmit="return confirm('Bu binayı silmek istediğinize emin misiniz?');">
+                            <input type="hidden" name="id" value="@bina.Id" />
+                            <button type="submit" class="btn-aksiyon btn-sil" style="width:100%;">Sil</button>
+                        </form>
+                    </div>
+                }
             </div>
+        }
+        @if (Model.Count == 0)
+        {
+            <div class="text-center p-5 text-muted">Yönetebileceğiniz bina veya kat bulunamadı.</div>
         }
     </div>
 </div>

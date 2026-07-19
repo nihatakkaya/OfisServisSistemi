@@ -87,6 +87,15 @@
                                 <a class="nav-link" href="/Admin/Kantinler">Kantin Yönetimi</a>
                             </li>
                         }
+                        else if (User.IsInRole("AidatSorumlusu"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Home/AidatBinaYonetimi">Bina & Kat & Aidat Yönetimi</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Home/Oda">Oda</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

@@ -1,5 +1,7 @@
 ﻿@model OfisServisSistemi.Models.Bina
 @{
+    var aidatYonetimiMi = ViewBag.AidatYonetimiMi == true;
+    var binaYetkisiVar = ViewBag.BinaYetkisiVar == true;
     ViewData["Title"] = Model.Ad + " - Katlar";
 }
 
@@ -203,14 +205,17 @@
             <h1 class="baslik-buyuk">@Model.Ad</h1>
             <div class="baslik-alt">Kat Yönetimi</div>
         </div>
-        <a href="/Admin/Index" class="btn-geri">← Binalara Dön</a>
+        <a href="@(aidatYonetimiMi ? "/Home/AidatBinaYonetimi" : "/Admin/Index")" class="btn-geri">← Binalara Dön</a>
     </div>
 
-    <form action="/Admin/KatEkle" method="post" class="ekleme-karti">
-        <input type="hidden" name="binaId" value="@Model.Id" />
-        <input type="text" name="ad" class="input-ozel" placeholder="Yeni Kat Adı (Örn: 3. Kat)" required />
-        <button type="submit" class="btn-ekle">+ KAT EKLE</button>
-    </form>
+    @if (!aidatYonetimiMi || binaYetkisiVar)
+    {
+        <form action="@(aidatYonetimiMi ? "/Home/AidatKatEkle" : "/Admin/KatEkle")" method="post" class="ekleme-karti">
+            <input type="hidden" name="binaId" value="@Model.Id" />
+            <input type="text" name="ad" class="input-ozel" placeholder="Yeni Kat Adı (Örn: 3. Kat)" required />
+            <button type="submit" class="btn-ekle">+ KAT EKLE</button>
+        </form>
+    }
 
     <div class="kat-listesi">
         @foreach (var kat in Model.Katlar)
@@ -224,15 +229,21 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center">
-                    <a href="/Admin/KatIzle/@kat.Id" class="btn-izle">Canlı İzle</a>
-                    <a href="/Admin/KatDetay/@kat.Id" class="btn-yonet">Kullanıcıları Yönet →</a>
+                    @if (!aidatYonetimiMi)
+                    {
+                        <a href="/Admin/KatIzle/@kat.Id" class="btn-izle">Canlı İzle</a>
+                    }
+                    <a href="@(aidatYonetimiMi ? $"/Home/AidatKatDetay/{kat.Id}" : $"/Admin/KatDetay/{kat.Id}")" class="btn-yonet">Kullanıcıları Yönet →</a>
 
-                    <button class="btn-duzenle" data-bs-toggle="modal" data-bs-target="#duzenleKatModal" onclick="katDuzenle(@kat.Id, '@kat.Ad')">Düzenle</button>
+                    @if (!aidatYonetimiMi)
+                    {
+                        <button class="btn-duzenle" data-bs-toggle="modal" data-bs-target="#duzenleKatModal" onclick="katDuzenle(@kat.Id, '@kat.Ad')">Düzenle</button>
 
-                    <form action="/Admin/KatSil" method="post" onsubmit="return confirm('Katı silmek istiyor musunuz?');" style="margin:0;">
-                        <input type="hidden" name="id" value="@kat.Id" />
-                        <button type="submit" class="btn-sil">Sil</button>
-                    </form>
+                        <form action="/Admin/KatSil" method="post" onsubmit="return confirm('Katı silmek istiyor musunuz?');" style="margin:0;">
+                            <input type="hidden" name="id" value="@kat.Id" />
+                            <button type="submit" class="btn-sil">Sil</button>
+                        </form>
+                    }
                 </div>
             </div>
         }

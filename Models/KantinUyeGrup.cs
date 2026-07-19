@@ -2,6 +2,8 @@ namespace OfisServisSistemi.Models
 {
     public class KantinUyeGrup
     {
+        public int? BinaId { get; set; }
+        public int? KatId { get; set; }
         public string BinaAdi { get; set; } = string.Empty;
         public string KatAdi { get; set; } = string.Empty;
         public bool OdaBilgisiYok { get; set; }

@@ -76,6 +76,13 @@ namespace OfisServisSistemi.Controllers
             }
             else
             {
+                var loginUrl = _configuration["SchoolApi:LoginUrl"];
+                if (string.IsNullOrWhiteSpace(loginUrl))
+                {
+                    ViewBag.Hata = "Okul API ayarı bulunamadı.";
+                    return View();
+                }
+
                 using var client = new HttpClient
                 {
                     Timeout = TimeSpan.FromSeconds(8)
@@ -85,7 +92,7 @@ namespace OfisServisSistemi.Controllers
 
                 try
                 {
-                    var response = await client.PostAsync("https://apilogin.subu.edu.tr/api/Login", jsonContent);
+                    var response = await client.PostAsync(loginUrl, jsonContent);
 
                     if (response.IsSuccessStatusCode)
                     {

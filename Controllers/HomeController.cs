@@ -15,11 +15,109 @@ namespace OfisServisSistemi.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<OfisHub> _hubContext;
+        private readonly IConfiguration _configuration;
 
-        public HomeController(ApplicationDbContext context, IHubContext<OfisHub> hubContext)
+        public HomeController(
+            ApplicationDbContext context,
+            IHubContext<OfisHub> hubContext,
+            IConfiguration configuration)
         {
             _context = context;
             _hubContext = hubContext;
+            _configuration = configuration;
+        }
+
+        private string? OkulApiSearchUserLink(string kullaniciAdi)
+        {
+            var searchUrl = _configuration["SchoolApi:SearchUserUrl"];
+            if (string.IsNullOrWhiteSpace(searchUrl)) return null;
+
+            var encodedUserName = Uri.EscapeDataString(kullaniciAdi);
+            return searchUrl.Contains("{0}")
+                ? string.Format(searchUrl, encodedUserName)
+                : $"{searchUrl}?KullaniciAdi={encodedUserName}";
+        }
+
+        private static void OkulApiKullaniciAdlariniTopla(JsonElement element, List<string> sonuclar)
+        {
+            if (element.ValueKind == JsonValueKind.String)
+            {
+                var deger = element.GetString();
+                if (!string.IsNullOrWhiteSpace(deger))
+                {
+                    sonuclar.Add(deger.Trim());
+                }
+
+                return;
+            }
+
+            if (element.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in element.EnumerateArray())
+                {
+                    OkulApiKullaniciAdlariniTopla(item, sonuclar);
+                }
+
+                return;
+            }
+
+            if (element.ValueKind != JsonValueKind.Object) return;
+
+            foreach (var property in element.EnumerateObject())
+            {
+                if ((property.Name.Equals("KullaniciAdi", StringComparison.OrdinalIgnoreCase) ||
+                     property.Name.Equals("KullanıcıAdı", StringComparison.OrdinalIgnoreCase) ||
+                     property.Name.Equals("UserName", StringComparison.OrdinalIgnoreCase)) &&
+                    property.Value.ValueKind == JsonValueKind.String)
+                {
+                    var kullaniciAdi = property.Value.GetString();
+                    if (!string.IsNullOrWhiteSpace(kullaniciAdi))
+                    {
+                        sonuclar.Add(kullaniciAdi.Trim());
+                    }
+                }
+                else if (property.Value.ValueKind == JsonValueKind.Object || property.Value.ValueKind == JsonValueKind.Array)
+                {
+                    OkulApiKullaniciAdlariniTopla(property.Value, sonuclar);
+                }
+            }
+        }
+
+        private async Task<List<string>> OkulApiKullaniciAra(string kullaniciAdi)
+        {
+            if (string.IsNullOrWhiteSpace(kullaniciAdi)) return new List<string>();
+
+            var arananKullaniciAdi = kullaniciAdi.Trim();
+            var searchUrl = OkulApiSearchUserLink(arananKullaniciAdi);
+            if (string.IsNullOrWhiteSpace(searchUrl)) return new List<string>();
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.ParseAdd("*/*");
+
+            var response = await client.GetAsync(searchUrl);
+            if (!response.IsSuccessStatusCode) return new List<string>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json)) return new List<string>();
+
+            try
+            {
+                using var document = JsonDocument.Parse(json);
+                var sonuclar = new List<string>();
+                OkulApiKullaniciAdlariniTopla(document.RootElement, sonuclar);
+
+                return sonuclar
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Where(x => x.Contains(arananKullaniciAdi, StringComparison.OrdinalIgnoreCase))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            catch (JsonException)
+            {
+                return json.Contains(arananKullaniciAdi, StringComparison.OrdinalIgnoreCase)
+                    ? new List<string> { arananKullaniciAdi }
+                    : new List<string>();
+            }
         }
 
         private void LogKaydet(string islemTuru, string detay)
@@ -98,6 +196,67 @@ namespace OfisServisSistemi.Controllers
                              && !ko.SilindiMi
                              && !ko.Kat.SilindiMi
                              && (katIdleri.Contains(ko.KatId) || binaIdleri.Contains(ko.Kat.BinaId)));
+        }
+
+        private async Task<Kullanici?> AktifKullaniciGetir()
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(username)) return null;
+
+            return await _context.Kullanicilar.FirstOrDefaultAsync(u => u.KullaniciAdi == username && !u.SilindiMi);
+        }
+
+        private async Task<List<AidatSorumlusuYetki>> AktifAidatYonetimYetkileri(Kullanici user)
+        {
+            return await _context.AidatSorumlusuYetkileri
+                .Where(y => y.KullaniciId == user.Id
+                         && !y.SilindiMi
+                         && !y.Kantin.SilindiMi
+                         && ((y.BinaId.HasValue && !y.Bina!.SilindiMi)
+                             || (y.KatId.HasValue && !y.Kat!.SilindiMi && !y.Kat.Bina.SilindiMi)))
+                .ToListAsync();
+        }
+
+        private async Task<bool> AidatBinaYonetimYetkisiVar(Kullanici user, int binaId)
+        {
+            if (User.IsInRole("SuperAdmin")) return true;
+            if (!User.IsInRole("AidatSorumlusu")) return false;
+
+            return await _context.AidatSorumlusuYetkileri
+                .AnyAsync(y => y.KullaniciId == user.Id
+                            && y.BinaId == binaId
+                            && !y.SilindiMi
+                            && !y.Kantin.SilindiMi
+                            && !y.Bina!.SilindiMi);
+        }
+
+        private async Task<bool> AidatKatYonetimYetkisiVar(Kullanici user, int katId)
+        {
+            if (User.IsInRole("SuperAdmin")) return true;
+            if (!User.IsInRole("AidatSorumlusu")) return false;
+
+            return await _context.AidatSorumlusuYetkileri
+                .AnyAsync(y => y.KullaniciId == user.Id
+                            && !y.SilindiMi
+                            && !y.Kantin.SilindiMi
+                            && ((y.KatId == katId && !y.Kat!.SilindiMi && !y.Kat.Bina.SilindiMi)
+                                || (y.BinaId.HasValue && _context.Katlar.Any(k => k.Id == katId && !k.SilindiMi && k.BinaId == y.BinaId && !k.Bina.SilindiMi))));
+        }
+
+        private async Task KatKullanicilariniYukle(Kat kat)
+        {
+            kat.Kullanicilar = await _context.KullaniciOdalari
+                .Include(ko => ko.Kullanici)
+                .Where(ko => ko.KatId == kat.Id && !ko.SilindiMi && !ko.Kullanici.SilindiMi)
+                .Select(ko => new Kullanici
+                {
+                    Id = ko.Id,
+                    KullaniciAdi = ko.Kullanici.KullaniciAdi,
+                    Rol = ko.Kullanici.Rol,
+                    OdaNumarasi = ko.OdaNumarasi,
+                    AidatYoneticisiMi = ko.Kullanici.AidatYoneticisiMi
+                })
+                .ToListAsync();
         }
 
         private async Task<List<int>> AidatKapsamindakiKullaniciIdleri(Kullanici sorumlu, int kantinId)
@@ -183,6 +342,256 @@ namespace OfisServisSistemi.Controllers
             ViewBag.KatAdi = string.Join(", ", gorevliBaglantilari.Select(gb => gb.Kat.Ad).Distinct());
             ViewBag.AidatYetkiliMi = (await YetkiliKantinIdleri(user)).Any();
             return View(model);
+        }
+
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatBinaYonetimi()
+        {
+            var user = await AktifKullaniciGetir();
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            var yetkiler = await AktifAidatYonetimYetkileri(user);
+            var binaYetkiIdleri = yetkiler.Where(y => y.BinaId.HasValue).Select(y => y.BinaId!.Value).Distinct().ToList();
+            var katYetkiIdleri = yetkiler.Where(y => y.KatId.HasValue).Select(y => y.KatId!.Value).Distinct().ToList();
+
+            var binalar = await _context.Binalar
+                .Where(b => !b.SilindiMi && (binaYetkiIdleri.Contains(b.Id) || b.Katlar.Any(k => katYetkiIdleri.Contains(k.Id) && !k.SilindiMi)))
+                .Include(b => b.Katlar.Where(k => !k.SilindiMi))
+                .OrderBy(b => b.Ad)
+                .ToListAsync();
+
+            foreach (var bina in binalar.Where(b => !binaYetkiIdleri.Contains(b.Id)))
+            {
+                bina.Katlar = bina.Katlar.Where(k => katYetkiIdleri.Contains(k.Id)).OrderBy(k => k.Ad).ToList();
+            }
+
+            ViewBag.AidatYonetimiMi = true;
+            return View("~/Views/Admin/Index.cshtml", binalar);
+        }
+
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatBinaDetay(int id)
+        {
+            var user = await AktifKullaniciGetir();
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            var yetkiler = await AktifAidatYonetimYetkileri(user);
+            var binaYetkisiVar = yetkiler.Any(y => y.BinaId == id);
+            var yetkiliKatIdleri = yetkiler.Where(y => y.KatId.HasValue).Select(y => y.KatId!.Value).Distinct().ToList();
+
+            var bina = await _context.Binalar
+                .Include(b => b.Katlar.Where(k => !k.SilindiMi))
+                .FirstOrDefaultAsync(b => b.Id == id && !b.SilindiMi);
+
+            if (bina == null) return RedirectToAction("AidatBinaYonetimi");
+            if (!binaYetkisiVar && !bina.Katlar.Any(k => yetkiliKatIdleri.Contains(k.Id))) return Unauthorized();
+
+            if (!binaYetkisiVar)
+            {
+                bina.Katlar = bina.Katlar.Where(k => yetkiliKatIdleri.Contains(k.Id)).OrderBy(k => k.Ad).ToList();
+            }
+
+            foreach (var kat in bina.Katlar)
+            {
+                kat.Kullanicilar = await _context.KullaniciOdalari
+                    .Where(ko => ko.KatId == kat.Id && !ko.SilindiMi && !ko.Kullanici.SilindiMi)
+                    .Select(ko => ko.Kullanici)
+                    .ToListAsync();
+            }
+
+            ViewBag.AidatYonetimiMi = true;
+            ViewBag.BinaYetkisiVar = binaYetkisiVar;
+            return View("~/Views/Admin/BinaDetay.cshtml", bina);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatKatEkle(int binaId, string ad)
+        {
+            var user = await AktifKullaniciGetir();
+            if (user == null) return RedirectToAction("Login", "Account");
+            if (!await AidatBinaYonetimYetkisiVar(user, binaId)) return Unauthorized();
+
+            var binaVarMi = await _context.Binalar.AnyAsync(b => b.Id == binaId && !b.SilindiMi);
+            if (!binaVarMi) return RedirectToAction("AidatBinaYonetimi");
+
+            if (!string.IsNullOrWhiteSpace(ad))
+            {
+                _context.Katlar.Add(new Kat { Ad = ad.Trim(), BinaId = binaId });
+                await _context.SaveChangesAsync();
+                LogKaydet("Kat Eklendi", $"Aidat sorumlusu, Bina ID: {binaId} içerisine '{ad.Trim()}' adlı yeni bir kat ekledi.");
+            }
+
+            return RedirectToAction("AidatBinaDetay", new { id = binaId });
+        }
+
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatKatDetay(int id)
+        {
+            var user = await AktifKullaniciGetir();
+            if (user == null) return RedirectToAction("Login", "Account");
+            if (!await AidatKatYonetimYetkisiVar(user, id)) return Unauthorized();
+
+            var kat = await _context.Katlar
+                .Include(k => k.Bina)
+                .FirstOrDefaultAsync(k => k.Id == id && !k.SilindiMi && !k.Bina.SilindiMi);
+
+            if (kat == null) return RedirectToAction("AidatBinaYonetimi");
+
+            await KatKullanicilariniYukle(kat);
+
+            ViewBag.AidatYonetimiMi = true;
+            return View("~/Views/Admin/KatDetay.cshtml", kat);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatKullaniciAra(string q)
+        {
+            if (string.IsNullOrWhiteSpace(q)) return Json(new List<string>());
+
+            var birlesikSonuclar = new List<string>();
+
+            var dbSonuclar = await _context.Kullanicilar
+                .Where(u => u.KullaniciAdi.Contains(q) && !u.SilindiMi)
+                .Select(u => u.KullaniciAdi)
+                .ToListAsync();
+
+            birlesikSonuclar.AddRange(dbSonuclar);
+
+            try
+            {
+                var apiSonuclar = await OkulApiKullaniciAra(q);
+                birlesikSonuclar.AddRange(apiSonuclar);
+            }
+            catch
+            {
+            }
+
+            return Json(birlesikSonuclar.Distinct().OrderBy(x => x).Take(15).ToList());
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatKullaniciEkle(int katId, string kullaniciAdi, string rol, string? odaNumarasi)
+        {
+            var aktifKullanici = await AktifKullaniciGetir();
+            if (aktifKullanici == null) return RedirectToAction("Login", "Account");
+            if (!await AidatKatYonetimYetkisiVar(aktifKullanici, katId)) return Unauthorized();
+
+            var katVarMi = await _context.Katlar.AnyAsync(k => k.Id == katId && !k.SilindiMi && !k.Bina.SilindiMi);
+            if (!katVarMi) return RedirectToAction("AidatBinaYonetimi");
+            if (string.IsNullOrWhiteSpace(kullaniciAdi)) return RedirectToAction("AidatKatDetay", new { id = katId });
+
+            kullaniciAdi = kullaniciAdi.Trim();
+            odaNumarasi = string.IsNullOrWhiteSpace(odaNumarasi) ? null : odaNumarasi.Trim();
+            if (rol != "Oda" && rol != "KatGorevlisi") rol = "Oda";
+
+            var user = await _context.Kullanicilar.FirstOrDefaultAsync(u => u.KullaniciAdi == kullaniciAdi && !u.SilindiMi);
+
+            if (user == null)
+            {
+                bool okulApisindeVarMi = false;
+
+                try
+                {
+                    var apiSonuclar = await OkulApiKullaniciAra(kullaniciAdi);
+                    okulApisindeVarMi = apiSonuclar.Any(x => x.Equals(kullaniciAdi, StringComparison.OrdinalIgnoreCase));
+                }
+                catch
+                {
+                }
+
+                if (!okulApisindeVarMi)
+                {
+                    TempData["Hata"] = $"Sistemde veya Okulun API'sinde '{kullaniciAdi}' adında bir kişi bulunamadı!";
+                    return RedirectToAction("AidatKatDetay", new { id = katId });
+                }
+
+                user = new Kullanici
+                {
+                    KullaniciAdi = kullaniciAdi,
+                    Sifre = "API_LOGIN",
+                    Rol = rol
+                };
+                _context.Kullanicilar.Add(user);
+            }
+            else
+            {
+                user.Rol = rol;
+            }
+
+            await _context.SaveChangesAsync();
+
+            bool zatenVarMi = await _context.KullaniciOdalari.AnyAsync(ko => ko.KullaniciId == user.Id && ko.KatId == katId && ko.OdaNumarasi == odaNumarasi && !ko.SilindiMi);
+            if (!zatenVarMi)
+            {
+                _context.KullaniciOdalari.Add(new KullaniciOda { KullaniciId = user.Id, KatId = katId, OdaNumarasi = (rol == "Oda") ? odaNumarasi : null });
+                await _context.SaveChangesAsync();
+                LogKaydet("Kullanıcı Eklendi", $"Aidat sorumlusu, '{kullaniciAdi}' adlı kullanıcıyı Kat ID: {katId} içerisine {rol} yetkisiyle ekledi.");
+            }
+            else
+            {
+                TempData["Hata"] = "Bu kullanıcı zaten bu odada tanımlı!";
+            }
+
+            return RedirectToAction("AidatKatDetay", new { id = katId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatKullaniciSil(int id)
+        {
+            var aktifKullanici = await AktifKullaniciGetir();
+            if (aktifKullanici == null) return RedirectToAction("Login", "Account");
+
+            var baglanti = await _context.KullaniciOdalari
+                .Include(ko => ko.Kullanici)
+                .FirstOrDefaultAsync(ko => ko.Id == id && !ko.SilindiMi);
+
+            if (baglanti == null) return RedirectToAction("AidatBinaYonetimi");
+            if (!await AidatKatYonetimYetkisiVar(aktifKullanici, baglanti.KatId)) return Unauthorized();
+
+            baglanti.SilindiMi = true;
+            await _context.SaveChangesAsync();
+            LogKaydet("Kullanıcı Silindi", $"Aidat sorumlusu, '{baglanti.Kullanici.KullaniciAdi}' adlı kullanıcının bağlantısını sildi.");
+
+            return RedirectToAction("AidatKatDetay", new { id = baglanti.KatId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "AidatSorumlusu,SuperAdmin")]
+        public async Task<IActionResult> AidatKullaniciGuncelle(int id, string? kullaniciAdi, string rol, string? odaNumarasi)
+        {
+            var aktifKullanici = await AktifKullaniciGetir();
+            if (aktifKullanici == null) return RedirectToAction("Login", "Account");
+
+            kullaniciAdi = kullaniciAdi?.Trim();
+            odaNumarasi = string.IsNullOrWhiteSpace(odaNumarasi) ? null : odaNumarasi.Trim();
+            if (rol != "Oda" && rol != "KatGorevlisi") rol = "Oda";
+
+            var baglanti = await _context.KullaniciOdalari
+                .Include(ko => ko.Kullanici)
+                .FirstOrDefaultAsync(ko => ko.Id == id && !ko.SilindiMi);
+
+            if (baglanti == null) return RedirectToAction("AidatBinaYonetimi");
+            if (!await AidatKatYonetimYetkisiVar(aktifKullanici, baglanti.KatId)) return Unauthorized();
+
+            string eskiRol = baglanti.Kullanici.Rol;
+            baglanti.OdaNumarasi = (rol == "Oda") ? odaNumarasi : null;
+            baglanti.Kullanici.Rol = rol;
+
+            if (!string.IsNullOrWhiteSpace(kullaniciAdi)
+                && baglanti.Kullanici.KullaniciAdi != kullaniciAdi
+                && !await _context.Kullanicilar.AnyAsync(u => u.KullaniciAdi == kullaniciAdi && u.Id != baglanti.KullaniciId && !u.SilindiMi))
+            {
+                baglanti.Kullanici.KullaniciAdi = kullaniciAdi;
+            }
+
+            await _context.SaveChangesAsync();
+            LogKaydet("Kullanıcı Güncellendi", $"Aidat sorumlusu, '{baglanti.Kullanici.KullaniciAdi}' adlı kullanıcının yetkisini {eskiRol} -> {rol} olarak değiştirdi.");
+
+            return RedirectToAction("AidatKatDetay", new { id = baglanti.KatId });
         }
 
         public async Task<IActionResult> AidatTakip(string ayYil, int? kantinId)

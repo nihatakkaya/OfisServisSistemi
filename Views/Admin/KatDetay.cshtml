@@ -1,5 +1,6 @@
 ﻿@model OfisServisSistemi.Models.Kat
 @{
+    var aidatYonetimiMi = ViewBag.AidatYonetimiMi == true;
     ViewData["Title"] = Model.Ad + " - Kullanıcılar";
 }
 
@@ -229,7 +230,7 @@
             <h1 class="baslik-buyuk">@Model.Ad</h1>
             <div class="baslik-alt">@Model.Bina.Ad / Kullanıcı Yönetimi</div>
         </div>
-        <a href="/Admin/BinaDetay/@Model.BinaId" class="btn-geri">← Katlara Dön</a>
+        <a href="@(aidatYonetimiMi ? $"/Home/AidatBinaDetay/{Model.BinaId}" : $"/Admin/BinaDetay/{Model.BinaId}")" class="btn-geri">← Katlara Dön</a>
     </div>
 
     @if (TempData["Hata"] != null)
@@ -247,7 +248,7 @@
 
     <div class="ekleme-karti">
         <h5 class="form-baslik">➕ Yeni Kullanıcı / Yetki Ekle</h5>
-        <form action="/Admin/KullaniciEkle" method="post" class="row g-3">
+        <form action="@(aidatYonetimiMi ? "/Home/AidatKullaniciEkle" : "/Admin/KullaniciEkle")" method="post" class="row g-3">
             <input type="hidden" name="katId" value="@Model.Id" />
 
             <div class="col-md-4 autocomplete-container">
@@ -316,7 +317,7 @@
                         </td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-warning text-dark fw-bold me-2" data-bs-toggle="modal" data-bs-target="#userEditModal" onclick="userDuzenle(@user.Id, '@user.KullaniciAdi', '@user.Rol', '@user.OdaNumarasi')">Düzenle</button>
-                            <form action="/Admin/KullaniciSil" method="post" style="display:inline;" onsubmit="return confirm('Silmek istiyor musunuz?');">
+                            <form action="@(aidatYonetimiMi ? "/Home/AidatKullaniciSil" : "/Admin/KullaniciSil")" method="post" style="display:inline;" onsubmit="return confirm('Silmek istiyor musunuz?');">
                                 <input type="hidden" name="id" value="@user.Id" />
                                 <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">Sil</button>
                             </form>
@@ -336,7 +337,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Kullanıcı Düzenle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <form action="/Admin/KullaniciGuncelle" method="post">
+            <form action="@(aidatYonetimiMi ? "/Home/AidatKullaniciGuncelle" : "/Admin/KullaniciGuncelle")" method="post">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="editUserId" />
 
@@ -376,7 +377,8 @@
             return;
         }
 
-        fetch('/Admin/KullaniciAra?q=' + encodeURIComponent(q))
+        const aramaUrl = '@(aidatYonetimiMi ? "/Home/AidatKullaniciAra" : "/Admin/KullaniciAra")';
+        fetch(aramaUrl + '?q=' + encodeURIComponent(q))
             .then(res => res.json())
             .then(data => {
                 list.innerHTML = ''; // Eski listeyi temizle
