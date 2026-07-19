@@ -46,23 +46,221 @@ Service Worker ve manifest entegrasyonu sayesinde proje, kullanıcıların telef
 
 ---
 
-## Docker ile Çalıştırma
+## Kurulum ve Yayına Alma Rehberi
 
-Projeyi Docker Compose ile çalıştırmadan önce `.env.example` dosyasını `.env` adıyla kopyalayın ve gerekli ortam değişkenlerini doldurun. Okul API adresleri ve prod şifreleri GitHub'a yüklenmez; çalışma zamanında `.env` veya sunucu ortam değişkenleri üzerinden verilir.
+Bu proje Docker ile çalışacak şekilde hazırlanmıştır. Projeyi GitHub üzerinden ZIP olarak indiren veya klonlayan bir kişi, aşağıdaki adımları izleyerek uygulamayı kendi bilgisayarında ya da sunucuda ayağa kaldırabilir.
+
+### Gereksinimler
+
+Projeyi çalıştıracak bilgisayarda veya sunucuda şu araçlar kurulu olmalıdır:
+
+* Docker
+* Docker Compose
+* İnternet bağlantısı
+* 8080 portunun kullanılabilir olması
+
+Docker kurulu değilse önce Docker Desktop veya sunucu ortamına uygun Docker Engine kurulmalıdır.
+
+---
+
+### Projeyi ZIP Olarak İndirip Çalıştırma
+
+GitHub üzerinden proje ZIP olarak indirildikten sonra dosya çıkarılır. Ardından `docker-compose.yml` dosyasının bulunduğu proje klasöründe terminal açılır.
+
+Önce örnek ortam değişkenleri dosyası `.env` adıyla kopyalanır:
 
 ```powershell
 Copy-Item .env.example .env
+```
+
+Linux sunucuda aynı işlem şu şekilde yapılabilir:
+
+```bash
+cp .env.example .env
+```
+
+Daha sonra `.env` dosyası açılıp gerekli bilgiler doldurulur.
+
+Örnek `.env` içeriği:
+
+```env
+MSSQL_SA_PASSWORD=GucluBirSifre123!
+SUPER_ADMIN_KULLANICI_ADI=
+SCHOOL_API_LOGIN_URL=
+SCHOOL_API_SEARCH_USER_URL=
+```
+
+Minimum çalıştırma için `MSSQL_SA_PASSWORD` alanının güçlü bir SQL Server şifresiyle doldurulması yeterlidir.
+
+Okul API entegrasyonu kullanılacaksa şu alanlar da doldurulmalıdır:
+
+```env
+SCHOOL_API_LOGIN_URL=
+SCHOOL_API_SEARCH_USER_URL=
+```
+
+Bu bilgiler GitHub reposunda bilinçli olarak boş bırakılmıştır. Gerçek okul API adresleri ve prod şifreleri GitHub'a yüklenmez, sadece çalıştırılan bilgisayardaki `.env` dosyasında tutulur.
+
+---
+
+### Uygulamayı Başlatma
+
+`.env` dosyası hazırlandıktan sonra aşağıdaki komut çalıştırılır:
+
+```powershell
 docker compose up --build
 ```
 
-Zorunlu değişkenler:
+Linux sunucuda da aynı komut kullanılabilir:
 
-* `MSSQL_SA_PASSWORD`: SQL Server SA şifresi
-* `SCHOOL_API_LOGIN_URL`: Okul giriş API adresi
-* `SCHOOL_API_SEARCH_USER_URL`: Okul kullanıcı arama API adresi
-* `SUPER_ADMIN_KULLANICI_ADI`: İsteğe bağlı ilk super admin kullanıcı adı
+```bash
+docker compose up --build
+```
 
-Uygulama açılışta EF Core migration'larını otomatik uygular ve başlangıç seed verilerini oluşturur.
+İlk çalıştırmada Docker gerekli imajları indirir, uygulamayı build eder, SQL Server container'ını başlatır ve web uygulamasını ayağa kaldırır.
+
+Uygulama açıldığında tarayıcıdan şu adrese gidilir:
+
+```text
+http://localhost:8080
+```
+
+Sunucuda çalıştırılıyorsa `localhost` yerine sunucunun IP adresi veya domain adı kullanılır:
+
+```text
+http://SUNUCU_IP_ADRESI:8080
+```
+
+---
+
+### İlk Giriş Bilgileri
+
+Veritabanı ilk kez oluşturulduğunda sistem otomatik seed verisi üretir.
+
+Varsayılan ilk admin hesabı:
+
+```text
+Kullanıcı adı: superadmin
+Şifre: 123456
+```
+
+Bu kullanıcı okul API bilgisi olmadan sisteme giriş yapabilir. Böylece projeyi indiren kişi okul API adreslerini bilmeden de uygulamayı test edebilir.
+
+---
+
+### Veritabanı, Migration ve Seed İşlemleri
+
+Projede Entity Framework Core migration dosyaları mevcuttur. Uygulama Docker ile ayağa kalkarken şu işlemler otomatik yapılır:
+
+* SQL Server container'ı başlatılır.
+* Uygulama SQL Server hazır olana kadar bekler.
+* Bekleyen migration'lar otomatik uygulanır.
+* Veritabanı tabloları oluşturulur.
+* Başlangıç seed verileri eklenir.
+* `superadmin / 123456` kullanıcısı oluşturulur.
+
+Bu işlemler `Data/DatabaseInitializer.cs` dosyası üzerinden yürütülür.
+
+Ayrıca Docker Compose içinde SQL Server verisi kalıcı volume üzerinde tutulur:
+
+```text
+sql_data
+```
+
+Bu sayede container kapatılıp tekrar açıldığında veritabanı verileri silinmez.
+
+---
+
+### Sunucuda Çalıştırma
+
+Okul sunucusunda çalıştırmak için sunucuda Docker ve Docker Compose kurulu olmalıdır.
+
+Sunucuda yapılacak temel adımlar:
+
+```bash
+cp .env.example .env
+nano .env
+docker compose up --build -d
+```
+
+Arka planda çalıştırmak için `-d` parametresi kullanılır:
+
+```bash
+docker compose up --build -d
+```
+
+Container durumlarını görmek için:
+
+```bash
+docker compose ps
+```
+
+Logları görmek için:
+
+```bash
+docker compose logs -f
+```
+
+Uygulamayı durdurmak için:
+
+```bash
+docker compose down
+```
+
+Veritabanı volume'ünü silmeden uygulamayı durdurmak için sadece `docker compose down` kullanılmalıdır. Volume silinirse veritabanı verileri de silinebilir.
+
+---
+
+### Port Bilgileri
+
+Varsayılan portlar:
+
+* Web uygulaması: `8080`
+* SQL Server: `1433`
+
+Web uygulaması şu adresten çalışır:
+
+```text
+http://localhost:8080
+```
+
+Sunucuda dış erişim verilecekse 8080 portunun firewall üzerinden açık olması gerekir.
+
+SQL Server sadece uygulama tarafından kullanılacaksa 1433 portunun dış dünyaya açılması şart değildir.
+
+---
+
+### Sık Karşılaşılan Durumlar
+
+Eğer uygulama açılmıyorsa:
+
+```bash
+docker compose logs -f
+```
+
+komutu ile hata logları kontrol edilebilir.
+
+Eğer 8080 portu doluysa `docker-compose.yml` içindeki port eşlemesi değiştirilebilir:
+
+```yaml
+ports:
+  - "8081:8080"
+```
+
+Bu durumda uygulama şu adresten açılır:
+
+```text
+http://localhost:8081
+```
+
+Eğer okul numarası ve okul şifresiyle giriş çalışmıyorsa `.env` dosyasındaki okul API ayarları kontrol edilmelidir:
+
+```env
+SCHOOL_API_LOGIN_URL=
+SCHOOL_API_SEARCH_USER_URL=
+```
+
+Okul API bilgileri girilmemiş olsa bile sistem `superadmin / 123456` hesabıyla test edilebilir.
 
 ---
 
