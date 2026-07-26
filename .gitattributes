@@ -61,3 +61,12 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# GitHub language statistics
+#
+# Keep the project behavior unchanged while making GitHub Linguist count the
+# ASP.NET Razor views as C# and ignore checked-in frontend vendor libraries.
+###############################################################################
+*.cshtml linguist-language=C#
+wwwroot/lib/** linguist-vendored
